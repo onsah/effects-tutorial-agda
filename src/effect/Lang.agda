@@ -1,7 +1,14 @@
 
 open import Agda.Builtin.String using (String)
 open import Agda.Builtin.Maybe using (Maybe)
-open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Data.String.Properties using (_≟_)
+open import Data.Vec using (Vec; []; _∷_; lookup)
+open import Data.Nat using (ℕ)
+open import Data.Fin using (Fin)
+open import Data.Bool using (Bool)
+open import Data.Product using (Σ-syntax; ∃-syntax; _×_) renaming (_,′_ to ⟨_,_⟩)
+open import Relation.Nullary using (Dec; yes; no; ¬_)
 
 module effect.Lang where
 
@@ -13,10 +20,10 @@ module effect.Lang where
     infixl 5 _,_
     infixl 5 _,ₑ_
     infixl 5 _,ₑₗ_
-    infix 4 _!_
     infix 5 _—→_
     infix 5 _⟹_
     infix 5 _⦂_—→_
+    infix 6 _!_
 
     data ValueType : Set
     data ComputationType : Set
@@ -33,6 +40,10 @@ module effect.Lang where
 
     data Operation where
         _⦂_—→_ : (label : String) → (A : ValueType) → (B : ValueType) → Operation label A B
+
+    label : ∀ {label A B}
+          → Operation label A B → String
+    label (label ⦂ _ —→ _) = label
 
     data Context : Set where
         ∅ : Context
@@ -69,13 +80,40 @@ module effect.Lang where
         ∅ₑₗ : OpLabelContext
         _,ₑₗ_ : OpLabelContext → String → OpLabelContext
 
-    data _∋ₑₗ_ : OpLabelContext → String → Set where
-        Zₑ : {Γ : OpLabelContext} {label : String}
-          → Γ ,ₑₗ label ∋ₑₗ label
-        
-        Sₑ_ : {Γ : OpLabelContext} {label label' : String}
-           → Γ ∋ₑₗ label
-           → Γ ,ₑₗ label' ∋ₑₗ label
+    data _∋ₑₗ_ : OpLabelContext → String → Set 
+      where
+      Zₑₗ : {Δ : OpLabelContext} {oL : String}
+          → Δ ,ₑₗ oL ∋ₑₗ oL
+      
+      Sₑₗ  : {Δ : OpLabelContext}
+             {oL oL' : String}
+            → ¬ (oL ≡ oL')
+            → Δ ∋ₑₗ oL
+            → Δ ,ₑₗ oL' ∋ₑₗ oL
+
+    contains : (Δ : OpLabelContext) → (oL : String) → Dec (Δ ∋ₑₗ oL)
+    contains ∅ₑₗ oL = no λ()
+    contains (Δ ,ₑₗ oL') oL with oL ≟ oL'
+    ... | yes refl = yes Zₑₗ
+    ... | no ¬Z with contains Δ oL
+    ...   | yes ∋oL = yes (Sₑₗ ¬Z ∋oL)
+    ...   | no ¬S = no (λ{ Zₑₗ → ¬Z refl
+                         ; (Sₑₗ _ ∋oL) → ¬S ∋oL}) 
+
+    -- How to implement?
+    data _⊆_ : OpLabelContext → OpLabelContext → Set where
+
+    opLabelContextFromVec : {n : ℕ}
+                          → Vec String n
+                          → OpLabelContext
+    opLabelContextFromVec [] = ∅ₑₗ
+    opLabelContextFromVec (oL ∷ oLs) = (opLabelContextFromVec oLs) ,ₑₗ oL
+
+    _\'_ : OpLabelContext → OpLabelContext → OpLabelContext
+    ∅ₑₗ \' Δ' = ∅ₑₗ
+    (Δ ,ₑₗ x) \' Δ' with contains Δ' x
+    ... | yes _ = Δ \' Δ'
+    ... | no _ = (Δ \' Δ') ,ₑₗ x
 
     data ComputationType where
         -- Operation list is an overappromixation of what the computation actually uses.
@@ -103,6 +141,20 @@ module effect.Lang where
         `fun : {Γ : Context} {A : ValueType} {Aₑ : ComputationType}
              → Σ > (Γ , A) ⊢c Aₑ
              → Σ > Γ ⊢v A —→ Aₑ
+
+        `handler  : {Γ : Context} {Δ Δ' : OpLabelContext}
+                    {n : ℕ} {A B : ValueType}
+                    {opLabels : Vec String n}
+                  -- Return handler body
+                  → Σ > Γ , A ⊢c B ! Δ'
+                  -- Asserts that every effect handler body is well typed according to it's effect
+                  → ∀ (i : Fin n) → 
+                      ∃[ Aᵢ ] ∃[ Bᵢ ] 
+                        Σ[ op ∈ Operation (lookup opLabels i) Aᵢ Bᵢ ] 
+                          Σ ∋ₑ op × 
+                          (Σ > Γ , Aᵢ , (Bᵢ —→ B ! Δ') ⊢c B ! Δ')
+                  → (Δ \' (opLabelContextFromVec opLabels)) ⊆ Δ'
+                  → Σ > Γ ⊢v A ! Δ ⟹ B ! Δ'
 
     data _>_⊢c_ Σ where
         
@@ -142,5 +194,5 @@ module effect.Lang where
         `with_handle_ : {Γ : Context}
                         {Aₑ Bₑ : ComputationType}
                       → Σ > Γ ⊢v Aₑ ⟹ Bₑ
-                      → Σ > Γ ⊢c Aₑ
-                      → Σ > Γ ⊢c Bₑ
+                      → Σ > Γ ⊢c Aₑ 
+                      → Σ > Γ ⊢c Bₑ  
