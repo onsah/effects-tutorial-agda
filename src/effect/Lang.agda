@@ -17,57 +17,93 @@ module effect.Lang where
     infix 3 _>_⊢c_
     infix  4 _∋_
     infix  4 _∋ₑ_
-    infix  4 _∋ₑₗ_
     infixl 5 _,_
     infixl 5 _,ₑ_
-    infixl 5 _,ₑₗ_
-    infix 5 _—→_
-    infix 5 _⟹_
-    infix 5 _⦂_—→_
-    infix 6 _!_
 
-    data ValueType : Set
-    data ComputationType : Set
+    module Type where
+      infix  4 _∋ₑₗ_
+      infixl 5 _,ₑₗ_
+      infix 6 _!_
+      infix 5 _—→_
+      infix 5 _⟹_
+      infix 5 _⦂_—→_
+
+      data ValueType : Set
+      data ComputationType : Set
+      data OpLabelContext : Set
     
-    data OpLabelContext : Set
-    data Operation (Δ : OpLabelContext) : String → ValueType → ValueType → Set
+      data ValueType where
+          bool : ValueType
+          str  : ValueType
+          int  : ValueType
+          unit : ValueType
+          void : ValueType
+          _—→_ : ValueType → ComputationType → ValueType
+          _⟹_ : ComputationType → ComputationType → ValueType
 
-    data ValueType where
-        bool : ValueType
-        str  : ValueType
-        int  : ValueType
-        unit : ValueType
-        void : ValueType
-        _—→_ : ValueType → ComputationType → ValueType
-        _⟹_ : ComputationType → ComputationType → ValueType
+      data ComputationType where
+          -- Operation list is an overappromixation of what the computation actually uses.
+          _!_ : ValueType → OpLabelContext → ComputationType
 
-    data ComputationType where
-        -- Operation list is an overappromixation of what the computation actually uses.
-        _!_ : ValueType → OpLabelContext → ComputationType
+      data OpLabelContext where
+        ∅ₑₗ : OpLabelContext
+        _,ₑₗ_ : OpLabelContext → String → OpLabelContext
 
-    data OpLabelContext where
-      ∅ₑₗ : OpLabelContext
-      _,ₑₗ_ : OpLabelContext → String → OpLabelContext
+      data _∋ₑₗ_ : OpLabelContext → String → Set 
+        where
+        Zₑₗ : {Δ : OpLabelContext} {oL : String}
+            → Δ ,ₑₗ oL ∋ₑₗ oL
+        
+        Sₑₗ  : {Δ : OpLabelContext}
+              {oL oL' : String}
+              → ¬ (oL ≡ oL')
+              → Δ ∋ₑₗ oL
+              → Δ ,ₑₗ oL' ∋ₑₗ oL
 
-    data _∋ₑₗ_ : OpLabelContext → String → Set 
-      where
-      Zₑₗ : {Δ : OpLabelContext} {oL : String}
-          → Δ ,ₑₗ oL ∋ₑₗ oL
+      module OpLabelContextOps where
+
+        contains : (Δ : OpLabelContext) → (oL : String) → Dec (Δ ∋ₑₗ oL)
+        contains ∅ₑₗ oL = no λ()
+        contains (Δ ,ₑₗ oL') oL with oL ≟ oL'
+        ... | yes refl = yes Zₑₗ
+        ... | no ¬Z with contains Δ oL
+        ...   | yes ∋oL = yes (Sₑₗ ¬Z ∋oL)
+        ...   | no ¬S = no (λ{ Zₑₗ → ¬Z refl
+                            ; (Sₑₗ _ ∋oL) → ¬S ∋oL}) 
+
+        -- TODO: How to implement?
+        data _⊆_ : OpLabelContext → OpLabelContext → Set where
+
+        fromVec : {n : ℕ}
+                → Vec String n
+                → OpLabelContext
+        fromVec [] = ∅ₑₗ
+        fromVec (oL ∷ oLs) = (fromVec oLs) ,ₑₗ oL
+
+        _\'_ : OpLabelContext → OpLabelContext → OpLabelContext
+        ∅ₑₗ \' Δ' = ∅ₑₗ
+        (Δ ,ₑₗ x) \' Δ' with contains Δ' x
+        ... | yes _ = Δ \' Δ'
+        ... | no _ = (Δ \' Δ') ,ₑₗ x
       
-      Sₑₗ  : {Δ : OpLabelContext}
-             {oL oL' : String}
-            → ¬ (oL ≡ oL')
-            → Δ ∋ₑₗ oL
-            → Δ ,ₑₗ oL' ∋ₑₗ oL
+      open OpLabelContextOps public
+    
+      data Operation (Δ : OpLabelContext) : String → ValueType → ValueType → Set
 
-    data Operation Δ where
-        _⦂_—→_  : {label : String} 
-                → (Δ ∋ₑₗ label) → (A : ValueType) → (B : ValueType) 
-                → Operation Δ label A B
+      data Operation Δ where
+          _⦂_—→_  : {label : String} 
+                  → (Δ ∋ₑₗ label) → (A : ValueType) → (B : ValueType) 
+                  → Operation Δ label A B
 
-    label : ∀ {Δ label A B}
-          → Operation Δ label A B → String
-    label (_⦂_—→_ {label = label} _ _ _) = label
+      module OperationOps where
+
+        label : ∀ {Δ label A B}
+              → Operation Δ label A B → String
+        label (_⦂_—→_ {label = label} _ _ _) = label
+
+      open OperationOps public
+      
+    open Type
 
     data Context : Set where
         ∅ : Context
@@ -81,7 +117,7 @@ module effect.Lang where
            → Γ ∋ A
            → Γ , B ∋ A
 
-    -- Unlike Context, this is fixed throughtout the whole program.
+    -- Unlike Context, this is fixed throughout the whole program.
     -- It's the list of predefined effect signatures that could be used in the program.
     data OpContext : Set where
         ∅ₑ : OpContext
@@ -101,30 +137,6 @@ module effect.Lang where
               {op : Operation Δ label A B} {op' : Operation Δ' label' A' B'}
             → Γ ∋ₑ op
             → Γ ,ₑ op' ∋ₑ op
-
-    contains : (Δ : OpLabelContext) → (oL : String) → Dec (Δ ∋ₑₗ oL)
-    contains ∅ₑₗ oL = no λ()
-    contains (Δ ,ₑₗ oL') oL with oL ≟ oL'
-    ... | yes refl = yes Zₑₗ
-    ... | no ¬Z with contains Δ oL
-    ...   | yes ∋oL = yes (Sₑₗ ¬Z ∋oL)
-    ...   | no ¬S = no (λ{ Zₑₗ → ¬Z refl
-                         ; (Sₑₗ _ ∋oL) → ¬S ∋oL}) 
-
-    -- How to implement?
-    data _⊆_ : OpLabelContext → OpLabelContext → Set where
-
-    opLabelContextFromVec : {n : ℕ}
-                          → Vec String n
-                          → OpLabelContext
-    opLabelContextFromVec [] = ∅ₑₗ
-    opLabelContextFromVec (oL ∷ oLs) = (opLabelContextFromVec oLs) ,ₑₗ oL
-
-    _\'_ : OpLabelContext → OpLabelContext → OpLabelContext
-    ∅ₑₗ \' Δ' = ∅ₑₗ
-    (Δ ,ₑₗ x) \' Δ' with contains Δ' x
-    ... | yes _ = Δ \' Δ'
-    ... | no _ = (Δ \' Δ') ,ₑₗ x
 
     -- Thought it's appropriate to have effect context as a parameterized type since it's not supposed to change.
     -- Term typing rules are mutually recursive
@@ -170,7 +182,7 @@ module effect.Lang where
                         Σ[ op ∈ Operation Δ (lookup opLabels i) Aᵢ Bᵢ ] 
                           Σ ∋ₑ op × 
                           (Σ > Γ , Aᵢ , (Bᵢ —→ B ! Δ') ⊢c B ! Δ')
-                  → (Δ \' (opLabelContextFromVec opLabels)) ⊆ Δ'
+                  → (Δ \' (fromVec opLabels)) ⊆ Δ'
                   → Σ > Γ ⊢v A ! Δ ⟹ B ! Δ'
 
     record OpArgs   {A Aₒₚ Bₒₚ : ValueType}
@@ -253,4 +265,4 @@ module effect.Lang where
     weakenᵥ (`s x) = `s x
     weakenᵥ (`fun x) = {! weakenₑ x  !}
 
-    weakenₑ = {!   !}
+    weakenₑ = {!   !} 
