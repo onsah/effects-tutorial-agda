@@ -1,3 +1,4 @@
+{-# OPTIONS --allow-unsolved-metas #-} 
 
 open import Agda.Builtin.String using (String)
 open import Agda.Builtin.Maybe using (Maybe)
@@ -27,7 +28,9 @@ module effect.Lang where
 
     data ValueType : Set
     data ComputationType : Set
-    data Operation : String → ValueType → ValueType → Set
+    
+    data OpLabelContext : Set
+    data Operation (Δ : OpLabelContext) : String → ValueType → ValueType → Set
 
     data ValueType where
         bool : ValueType
@@ -38,12 +41,33 @@ module effect.Lang where
         _—→_ : ValueType → ComputationType → ValueType
         _⟹_ : ComputationType → ComputationType → ValueType
 
-    data Operation where
-        _⦂_—→_ : (label : String) → (A : ValueType) → (B : ValueType) → Operation label A B
+    data ComputationType where
+        -- Operation list is an overappromixation of what the computation actually uses.
+        _!_ : ValueType → OpLabelContext → ComputationType
 
-    label : ∀ {label A B}
-          → Operation label A B → String
-    label (label ⦂ _ —→ _) = label
+    data OpLabelContext where
+      ∅ₑₗ : OpLabelContext
+      _,ₑₗ_ : OpLabelContext → String → OpLabelContext
+
+    data _∋ₑₗ_ : OpLabelContext → String → Set 
+      where
+      Zₑₗ : {Δ : OpLabelContext} {oL : String}
+          → Δ ,ₑₗ oL ∋ₑₗ oL
+      
+      Sₑₗ  : {Δ : OpLabelContext}
+             {oL oL' : String}
+            → ¬ (oL ≡ oL')
+            → Δ ∋ₑₗ oL
+            → Δ ,ₑₗ oL' ∋ₑₗ oL
+
+    data Operation Δ where
+        _⦂_—→_  : {label : String} 
+                → (Δ ∋ₑₗ label) → (A : ValueType) → (B : ValueType) 
+                → Operation Δ label A B
+
+    label : ∀ {Δ label A B}
+          → Operation Δ label A B → String
+    label (_⦂_—→_ {label = label} _ _ _) = label
 
     data Context : Set where
         ∅ : Context
@@ -61,35 +85,22 @@ module effect.Lang where
     -- It's the list of predefined effect signatures that could be used in the program.
     data OpContext : Set where
         ∅ₑ : OpContext
-        _,ₑ_ : {label : String} {A B : ValueType}
-             → OpContext → Operation label A B → OpContext
+        _,ₑ_ : {label : String} {A B : ValueType} {Δ : OpLabelContext}
+             → OpContext → Operation Δ label A B → OpContext
 
-    data _∋ₑ_ : {label : String} {A B : ValueType}
-              → OpContext → Operation label A B → Set 
+    data _∋ₑ_ : {label : String} {A B : ValueType} {Δ : OpLabelContext}
+              → OpContext → Operation Δ label A B → Set
         where
-        Zₑ  : {Γ : OpContext} {label : String} {A B : ValueType} 
-              {op : Operation label A B}
+        Zₑ  : {Γ : OpContext} {Δ : OpLabelContext}
+              {label : String} {A B : ValueType} 
+              {op : Operation Δ label A B}
             → Γ ,ₑ op ∋ₑ op
         
-        Sₑ_ : {Γ : OpContext} {label label' : String} {A A' B B' : ValueType} 
-              {op : Operation label A B} {op' : Operation label' A' B'}
+        Sₑ_ : {Γ : OpContext} {Δ Δ' : OpLabelContext}
+              {label label' : String} {A A' B B' : ValueType} 
+              {op : Operation Δ label A B} {op' : Operation Δ' label' A' B'}
             → Γ ∋ₑ op
             → Γ ,ₑ op' ∋ₑ op
-
-    data OpLabelContext : Set where
-        ∅ₑₗ : OpLabelContext
-        _,ₑₗ_ : OpLabelContext → String → OpLabelContext
-
-    data _∋ₑₗ_ : OpLabelContext → String → Set 
-      where
-      Zₑₗ : {Δ : OpLabelContext} {oL : String}
-          → Δ ,ₑₗ oL ∋ₑₗ oL
-      
-      Sₑₗ  : {Δ : OpLabelContext}
-             {oL oL' : String}
-            → ¬ (oL ≡ oL')
-            → Δ ∋ₑₗ oL
-            → Δ ,ₑₗ oL' ∋ₑₗ oL
 
     contains : (Δ : OpLabelContext) → (oL : String) → Dec (Δ ∋ₑₗ oL)
     contains ∅ₑₗ oL = no λ()
@@ -115,12 +126,9 @@ module effect.Lang where
     ... | yes _ = Δ \' Δ'
     ... | no _ = (Δ \' Δ') ,ₑₗ x
 
-    data ComputationType where
-        -- Operation list is an overappromixation of what the computation actually uses.
-        _!_ : ValueType → OpLabelContext → ComputationType
-
     -- Thought it's appropriate to have effect context as a parameterized type since it's not supposed to change.
     -- Term typing rules are mutually recursive
+    -- Can use '⨟' as separater between context
     data _>_⊢v_ (Σ : OpContext) : Context → ValueType → Set
     -- Hmm: Maybe we should also have OpContext
     data _>_⊢c_ (Σ : OpContext) : Context → ComputationType → Set
@@ -137,10 +145,17 @@ module effect.Lang where
 
         `false : {Γ : Context}
                → Σ > Γ ⊢v bool
+          
+        `unit : {Γ : Context}
+              → Σ > Γ ⊢v unit
 
-        `fun : {Γ : Context} {A : ValueType} {Aₑ : ComputationType}
-             → Σ > (Γ , A) ⊢c Aₑ
-             → Σ > Γ ⊢v A —→ Aₑ
+        `s  : {Γ : Context}
+            → String
+            → Σ > Γ ⊢v str
+
+        `fun : {Γ : Context} {A B : ValueType} {Δ : OpLabelContext}
+             → Σ > (Γ , A) ⊢c B ! Δ
+             → Σ > Γ ⊢v A —→ B ! Δ
 
         `handler  : {Γ : Context} {Δ Δ' : OpLabelContext}
                     {n : ℕ} {A B : ValueType}
@@ -148,13 +163,30 @@ module effect.Lang where
                   -- Return handler body
                   → Σ > Γ , A ⊢c B ! Δ'
                   -- Asserts that every effect handler body is well typed according to it's effect
+                  -- Make it it's own definition
                   → ∀ (i : Fin n) → 
+                    -- TODO: Have a record for the return
                       ∃[ Aᵢ ] ∃[ Bᵢ ] 
-                        Σ[ op ∈ Operation (lookup opLabels i) Aᵢ Bᵢ ] 
+                        Σ[ op ∈ Operation Δ (lookup opLabels i) Aᵢ Bᵢ ] 
                           Σ ∋ₑ op × 
                           (Σ > Γ , Aᵢ , (Bᵢ —→ B ! Δ') ⊢c B ! Δ')
                   → (Δ \' (opLabelContextFromVec opLabels)) ⊆ Δ'
                   → Σ > Γ ⊢v A ! Δ ⟹ B ! Δ'
+
+    record OpArgs   {A Aₒₚ Bₒₚ : ValueType}
+                    (Σ : OpContext)
+                    (Δ : OpLabelContext)
+                    (Γ : Context)
+                    (opLabel : String)
+                    (op : Operation Δ opLabel Aₒₚ Bₒₚ)
+                  : Set 
+      where
+      inductive
+      field
+        ∋oL : Δ ∋ₑₗ opLabel
+        ∋op : Σ ∋ₑ op
+        arg : Σ > Γ ⊢v Aₒₚ
+        cont : Σ > Γ , Bₒₚ ⊢c A ! Δ
 
     data _>_⊢c_ Σ where
         
@@ -163,16 +195,23 @@ module effect.Lang where
                 → Σ > Γ ⊢c A ! Δ
 
         -- Op rule
-        `op_[_⨾_⇒_] : {Γ : Context} {Δ : OpLabelContext} 
+        -- `op[_⨟_._]
+        `op : {Γ : Context} {Δ : OpLabelContext} 
                       {A Aₒₚ Bₒₚ : ValueType}
-                      {opLabel : String} {op : Operation opLabel Aₒₚ Bₒₚ}
+                      {opLabel : String} {op : Operation Δ opLabel Aₒₚ Bₒₚ}
+                    -- → Δ ∋ₑₗ opLabel
                     → Σ ∋ₑ op
                     → Σ > Γ ⊢v Aₒₚ
                     → Σ > Γ , Bₒₚ ⊢c A ! Δ
-                    → Δ ∋ₑₗ opLabel
                     → Σ > Γ ⊢c A ! Δ
 
-        `do_←—_`in_ : {Γ : Context} {Δ : OpLabelContext} 
+        `op₂  : {Γ : Context} {Δ : OpLabelContext} 
+                  {A Aₒₚ Bₒₚ : ValueType}
+                  {opLabel : String} {op : Operation Δ opLabel Aₒₚ Bₒₚ}
+              → OpArgs {A = A} Σ Δ Γ opLabel op
+              → Σ > Γ ⊢c A ! Δ
+
+        `do←—_`in_ : {Γ : Context} {Δ : OpLabelContext} 
                       {A B : ValueType}
                     → Σ > Γ ⊢c A ! Δ
                     → Σ > Γ , A ⊢c B ! Δ
@@ -195,4 +234,23 @@ module effect.Lang where
                         {Aₑ Bₑ : ComputationType}
                       → Σ > Γ ⊢v Aₑ ⟹ Bₑ
                       → Σ > Γ ⊢c Aₑ 
-                      → Σ > Γ ⊢c Bₑ  
+                      → Σ > Γ ⊢c Bₑ
+
+    weakenᵥ : {Σ : OpContext}
+              {Γ : Context} {A B : ValueType}
+            → Σ > Γ ⊢v A
+            → Σ > Γ , B ⊢v A
+    weakenₑ : {Σ : OpContext} {Δ : OpLabelContext}
+              {Γ : Context} {A B : ValueType}
+            → Σ > Γ ⊢c A ! Δ
+            → Σ > Γ , B ⊢c A ! Δ
+
+
+    weakenᵥ (` x) = {!   !}
+    weakenᵥ `true = `true
+    weakenᵥ `false = `false
+    weakenᵥ `unit = `unit
+    weakenᵥ (`s x) = `s x
+    weakenᵥ (`fun x) = {! weakenₑ x  !}
+
+    weakenₑ = {!   !}
