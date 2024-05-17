@@ -88,22 +88,21 @@ module effect.Lang where
       
       open OpLabelContextOps public
     
-      data Operation (Δ : OpLabelContext) : String → ValueType → ValueType → Set
+      data Operation : String → ValueType → ValueType → Set
 
-      data Operation Δ where
-          _⦂_—→_  : {label : String} 
-                  → (Δ ∋ₑₗ label) → (A : ValueType) → (B : ValueType) 
-                  → Operation Δ label A B
+      data Operation where
+          _⦂_—→_  : (label : String) → (A : ValueType) → (B : ValueType) 
+                  → Operation label A B
 
       module OperationOps where
 
-        label : ∀ {Δ label A B}
-              → Operation Δ label A B → String
-        label (_⦂_—→_ {label = label} _ _ _) = label
+        label : ∀ {label A B}
+              → Operation label A B → String
+        label (label ⦂ _ —→ _) = label
 
       open OperationOps public
       
-    open Type
+    open Type public
 
     data Context : Set where
         ∅ : Context
@@ -121,20 +120,20 @@ module effect.Lang where
     -- It's the list of predefined effect signatures that could be used in the program.
     data OpContext : Set where
         ∅ₑ : OpContext
-        _,ₑ_ : {label : String} {A B : ValueType} {Δ : OpLabelContext}
-             → OpContext → Operation Δ label A B → OpContext
+        _,ₑ_ : {label : String} {A B : ValueType}
+             → OpContext → Operation label A B → OpContext
 
-    data _∋ₑ_ : {label : String} {A B : ValueType} {Δ : OpLabelContext}
-              → OpContext → Operation Δ label A B → Set
+    data _∋ₑ_ : {label : String} {A B : ValueType}
+              → OpContext → Operation label A B → Set
         where
-        Zₑ  : {Γ : OpContext} {Δ : OpLabelContext}
+        Zₑ  : {Γ : OpContext}
               {label : String} {A B : ValueType} 
-              {op : Operation Δ label A B}
+              {op : Operation label A B}
             → Γ ,ₑ op ∋ₑ op
         
-        Sₑ_ : {Γ : OpContext} {Δ Δ' : OpLabelContext}
+        Sₑ_ : {Γ : OpContext}
               {label label' : String} {A A' B B' : ValueType} 
-              {op : Operation Δ label A B} {op' : Operation Δ' label' A' B'}
+              {op : Operation label A B} {op' : Operation label' A' B'}
             → Γ ∋ₑ op
             → Γ ,ₑ op' ∋ₑ op
 
@@ -179,26 +178,11 @@ module effect.Lang where
                   → ∀ (i : Fin n) → 
                     -- TODO: Have a record for the return
                       ∃[ Aᵢ ] ∃[ Bᵢ ] 
-                        Σ[ op ∈ Operation Δ (lookup opLabels i) Aᵢ Bᵢ ] 
+                        Σ[ op ∈ Operation (lookup opLabels i) Aᵢ Bᵢ ] 
                           Σ ∋ₑ op × 
                           (Σ > Γ , Aᵢ , (Bᵢ —→ B ! Δ') ⊢c B ! Δ')
                   → (Δ \' (fromVec opLabels)) ⊆ Δ'
                   → Σ > Γ ⊢v A ! Δ ⟹ B ! Δ'
-
-    record OpArgs   {A Aₒₚ Bₒₚ : ValueType}
-                    (Σ : OpContext)
-                    (Δ : OpLabelContext)
-                    (Γ : Context)
-                    (opLabel : String)
-                    (op : Operation Δ opLabel Aₒₚ Bₒₚ)
-                  : Set 
-      where
-      inductive
-      field
-        ∋oL : Δ ∋ₑₗ opLabel
-        ∋op : Σ ∋ₑ op
-        arg : Σ > Γ ⊢v Aₒₚ
-        cont : Σ > Γ , Bₒₚ ⊢c A ! Δ
 
     data _>_⊢c_ Σ where
         
@@ -207,21 +191,14 @@ module effect.Lang where
                 → Σ > Γ ⊢c A ! Δ
 
         -- Op rule
-        -- `op[_⨟_._]
-        `op : {Γ : Context} {Δ : OpLabelContext} 
+        `op_∧_[_]⇒_ : {Γ : Context} {Δ : OpLabelContext} 
                       {A Aₒₚ Bₒₚ : ValueType}
-                      {opLabel : String} {op : Operation Δ opLabel Aₒₚ Bₒₚ}
-                    -- → Δ ∋ₑₗ opLabel
+                      {opLabel : String} {op : Operation opLabel Aₒₚ Bₒₚ}
+                    → Δ ∋ₑₗ opLabel
                     → Σ ∋ₑ op
                     → Σ > Γ ⊢v Aₒₚ
                     → Σ > Γ , Bₒₚ ⊢c A ! Δ
                     → Σ > Γ ⊢c A ! Δ
-
-        `op₂  : {Γ : Context} {Δ : OpLabelContext} 
-                  {A Aₒₚ Bₒₚ : ValueType}
-                  {opLabel : String} {op : Operation Δ opLabel Aₒₚ Bₒₚ}
-              → OpArgs {A = A} Σ Δ Γ opLabel op
-              → Σ > Γ ⊢c A ! Δ
 
         `do←—_`in_ : {Γ : Context} {Δ : OpLabelContext} 
                       {A B : ValueType}
@@ -242,11 +219,11 @@ module effect.Lang where
                       → Σ > Γ ⊢c Aₑ
                       → Σ > Γ ⊢c Aₑ
 
-        `with_handle_ : {Γ : Context}
-                        {Aₑ Bₑ : ComputationType}
-                      → Σ > Γ ⊢v Aₑ ⟹ Bₑ
-                      → Σ > Γ ⊢c Aₑ 
-                      → Σ > Γ ⊢c Bₑ
+        `with_handle_ : {Γ : Context} {Δ Δ' : OpLabelContext}
+                        {A B : ValueType}
+                      → Σ > Γ ⊢v A ! Δ' ⟹ B ! Δ
+                      → Σ > Γ ⊢c A ! Δ' 
+                      → Σ > Γ ⊢c B ! Δ
 
     weakenᵥ : {Σ : OpContext}
               {Γ : Context} {A B : ValueType}
@@ -257,12 +234,31 @@ module effect.Lang where
             → Σ > Γ ⊢c A ! Δ
             → Σ > Γ , B ⊢c A ! Δ
 
+    swap  : {Σ : OpContext} {Δ : OpLabelContext}
+            {Γ : Context} {A B C : ValueType}
+          → Σ > Γ , A , B ⊢c C ! Δ
+          → Σ > Γ , B , A ⊢c C ! Δ
+    swap (`return x) = {!   !}
+    swap (`op x ∧ x₁ [ x₂ ]⇒ x₃) = {!   !}
+    swap (`do←— x `in x₁) = {!   !}
+    swap (x `· x₁) = {!   !}
+    swap (`if x then x₁ else x₂) = {!   !}
+    swap (`with x handle x₁) = {!   !}
 
-    weakenᵥ (` x) = {!   !}
+    weakenᵥ (` ∋x) = ` (S ∋x)
     weakenᵥ `true = `true
     weakenᵥ `false = `false
     weakenᵥ `unit = `unit
-    weakenᵥ (`s x) = `s x
-    weakenᵥ (`fun x) = {! weakenₑ x  !}
+    weakenᵥ (`s `str) = `s `str
+    weakenᵥ (`fun ⊢c) = `fun (swap (weakenₑ ⊢c))
 
-    weakenₑ = {!   !} 
+    weakenₑ (`return ⊢v) = `return (weakenᵥ ⊢v)
+    weakenₑ (`op x ∧ x₁ [ opArg ]⇒ opKont) = 
+      `op x ∧ x₁ [ weakenᵥ opArg ]⇒ swap (weakenₑ  opKont)
+    weakenₑ (`do←— ⊢arg `in ⊢body) = 
+      `do←— (weakenₑ ⊢arg) `in (swap (weakenₑ ⊢body))
+    weakenₑ (⊢f `· ⊢x) = (weakenᵥ ⊢f) `· (weakenᵥ ⊢x)
+    weakenₑ (`if ⊢cond then ⊢then else ⊢else) = 
+      `if (weakenᵥ ⊢cond) then (weakenₑ ⊢then) else (weakenₑ ⊢else)
+    weakenₑ (`with ⊢handler handle ⊢body) = 
+      `with (weakenᵥ ⊢handler) handle weakenₑ ⊢body 
