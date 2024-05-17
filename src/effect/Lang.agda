@@ -140,35 +140,31 @@ module effect.Lang where
     -- Thought it's appropriate to have effect context as a parameterized type since it's not supposed to change.
     -- Term typing rules are mutually recursive
     -- Can use '⨟' as separater between context
-    data _>_⊢v_ (Σ : OpContext) : Context → ValueType → Set
+    data _>_⊢v_ (Σ : OpContext) (Γ : Context) : ValueType → Set
     -- Hmm: Maybe we should also have OpContext
-    data _>_⊢c_ (Σ : OpContext) : Context → ComputationType → Set
+    data _>_⊢c_ (Σ : OpContext) (Γ : Context) : ComputationType → Set
 
     -- Value terms
-    data _>_⊢v_ Σ where
+    data _>_⊢v_ Σ Γ where
 
-        `_ : {Γ : Context} {A : ValueType}
+        `_ : {A : ValueType}
            → Γ ∋ A
            → Σ > Γ ⊢v A
         
-        `true : {Γ : Context}
-              → Σ > Γ ⊢v bool
+        `true : Σ > Γ ⊢v bool
 
-        `false : {Γ : Context}
-               → Σ > Γ ⊢v bool
+        `false : Σ > Γ ⊢v bool
           
-        `unit : {Γ : Context}
-              → Σ > Γ ⊢v unit
+        `unit : Σ > Γ ⊢v unit
 
-        `s  : {Γ : Context}
-            → String
+        `s  : String
             → Σ > Γ ⊢v str
 
-        `fun : {Γ : Context} {A B : ValueType} {Δ : OpLabelContext}
+        `fun : {A B : ValueType} {Δ : OpLabelContext}
              → Σ > (Γ , A) ⊢c B ! Δ
              → Σ > Γ ⊢v A —→ B ! Δ
 
-        `handler  : {Γ : Context} {Δ Δ' : OpLabelContext}
+        `handler  : {Δ Δ' : OpLabelContext}
                     {n : ℕ} {A B : ValueType}
                     {opLabels : Vec String n}
                   -- Return handler body
@@ -184,14 +180,14 @@ module effect.Lang where
                   → (Δ \' (fromVec opLabels)) ⊆ Δ'
                   → Σ > Γ ⊢v A ! Δ ⟹ B ! Δ'
 
-    data _>_⊢c_ Σ where
+    data _>_⊢c_ Σ Γ where
         
-        `return : {Γ : Context} {A : ValueType} {Δ : OpLabelContext}
+        `return : {A : ValueType} {Δ : OpLabelContext}
                 → Σ > Γ ⊢v A
                 → Σ > Γ ⊢c A ! Δ
 
         -- Op rule
-        `op_∧_[_]⇒_ : {Γ : Context} {Δ : OpLabelContext} 
+        `op_∧_[_]⇒_ : {Δ : OpLabelContext} 
                       {A Aₒₚ Bₒₚ : ValueType}
                       {opLabel : String} {op : Operation opLabel Aₒₚ Bₒₚ}
                     → Δ ∋ₑₗ opLabel
@@ -200,26 +196,24 @@ module effect.Lang where
                     → Σ > Γ , Bₒₚ ⊢c A ! Δ
                     → Σ > Γ ⊢c A ! Δ
 
-        `do←—_`in_ : {Γ : Context} {Δ : OpLabelContext} 
+        `do←—_`in_  : {Δ : OpLabelContext} 
                       {A B : ValueType}
                     → Σ > Γ ⊢c A ! Δ
                     → Σ > Γ , A ⊢c B ! Δ
                     → Σ > Γ ⊢c B ! Δ
 
-        _`·_ : {Γ : Context}
-               {A : ValueType} {Aₑ : ComputationType}
+        _`·_ : {A : ValueType} {Aₑ : ComputationType}
              → Σ > Γ ⊢v A —→ Aₑ
              → Σ > Γ ⊢v A
              → Σ > Γ ⊢c Aₑ
 
-        `if_then_else : {Γ : Context}
-                        {Aₑ : ComputationType}
+        `if_then_else : {Aₑ : ComputationType}
                       → Σ > Γ ⊢v bool
                       → Σ > Γ ⊢c Aₑ
                       → Σ > Γ ⊢c Aₑ
                       → Σ > Γ ⊢c Aₑ
 
-        `with_handle_ : {Γ : Context} {Δ Δ' : OpLabelContext}
+        `with_handle_ : {Δ Δ' : OpLabelContext}
                         {A B : ValueType}
                       → Σ > Γ ⊢v A ! Δ' ⟹ B ! Δ
                       → Σ > Γ ⊢c A ! Δ' 
@@ -238,12 +232,7 @@ module effect.Lang where
             {Γ : Context} {A B C : ValueType}
           → Σ > Γ , A , B ⊢c C ! Δ
           → Σ > Γ , B , A ⊢c C ! Δ
-    swap (`return x) = {!   !}
-    swap (`op x ∧ x₁ [ x₂ ]⇒ x₃) = {!   !}
-    swap (`do←— x `in x₁) = {!   !}
-    swap (x `· x₁) = {!   !}
-    swap (`if x then x₁ else x₂) = {!   !}
-    swap (`with x handle x₁) = {!   !}
+    swap x = {!   !}
 
     weakenᵥ (` ∋x) = ` (S ∋x)
     weakenᵥ `true = `true
