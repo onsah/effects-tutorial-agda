@@ -251,3 +251,21 @@ module effect.Lang where
       `if (weakenᵥ ⊢cond) then (weakenₑ ⊢then) else (weakenₑ ⊢else)
     weakenₑ (`with ⊢handler handle ⊢body) = 
       `with (weakenᵥ ⊢handler) handle weakenₑ ⊢body 
+
+
+    module SyntaxSugar where
+      infix 6 opCall[_∧_]
+      
+      -- Syntax sugar for effect calls
+      opCall[_∧_]  : {A B : ValueType}
+              {opLabel : String}
+              {Σ : OpContext} {Δ : OpLabelContext}
+              -- https://plfa.github.io/Decidable/?dark=true
+              {op : Operation opLabel A B}
+            → (∋oL : Δ ∋ₑₗ opLabel)
+            → (∋op : Σ ∋ₑ op)
+            → Σ > ∅ ⊢v A —→ B ! Δ
+            
+      opCall[ ∋oL ∧ ∋op ] = `fun (`op ∋oL ∧ ∋op [ ` Z ]⇒ `return (` Z))
+    
+    open SyntaxSugar
