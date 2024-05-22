@@ -3,13 +3,13 @@
 open import Agda.Builtin.String using (String)
 open import Agda.Builtin.Maybe using (Maybe)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
-open import Data.String.Properties using (_≟_)
 open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Data.Nat using (ℕ)
 open import Data.Fin using (Fin)
 open import Data.Bool using (Bool)
 open import Data.Product using (Σ-syntax; ∃-syntax; _×_) renaming (_,′_ to ⟨_,_⟩)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
+open import Relation.Nullary.Decidable using (True)
 
 module effect.Lang where
 
@@ -20,7 +20,12 @@ module effect.Lang where
     infixl 5 _,_
     infixl 5 _,ₑ_
 
+    case_of_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
+    case x of f = f x
+
     module Type where
+      open import Data.String.Properties using (_≟_)
+      
       infix  4 _∋ₑₗ_
       infixl 5 _,ₑₗ_
       infix 6 _!_
@@ -33,13 +38,13 @@ module effect.Lang where
       data OpLabelContext : Set
     
       data ValueType where
-          bool : ValueType
-          str  : ValueType
-          int  : ValueType
-          unit : ValueType
-          void : ValueType
-          _—→_ : ValueType → ComputationType → ValueType
-          _⟹_ : ComputationType → ComputationType → ValueType
+        bool : ValueType
+        str  : ValueType
+        int  : ValueType
+        unit : ValueType
+        void : ValueType
+        _—→_ : ValueType → ComputationType → ValueType
+        _⟹_ : ComputationType → ComputationType → ValueType
 
       data ComputationType where
           -- Operation list is an overappromixation of what the computation actually uses.
@@ -48,6 +53,86 @@ module effect.Lang where
       data OpLabelContext where
         ∅ₑₗ : OpLabelContext
         _,ₑₗ_ : OpLabelContext → String → OpLabelContext
+
+      _≟-v_ : (A : ValueType)
+            → (B : ValueType)
+            → Dec (A ≡ B)
+      _≟-c_ : (A : ComputationType)
+            → (B : ComputationType)
+            → Dec (A ≡ B)
+      _≟-Δ_ : (Δ₁ : OpLabelContext)
+            → (Δ₂ : OpLabelContext)
+            → Dec (Δ₁ ≡ Δ₂)
+      
+      bool ≟-v bool = yes refl
+      str ≟-v str = yes refl
+      int ≟-v int = yes refl
+      unit ≟-v unit = yes refl
+      (A —→ B) ≟-v (A' —→ B') with A ≟-v A' | B ≟-c B'
+      ... | yes refl  | yes refl  = yes refl
+      ... | no A≢A'   | _         = no λ{ refl → A≢A' refl}
+      ... | _         | no B≢B'   = no λ{ refl → B≢B' refl}
+      (A ⟹ B) ≟-v (A' ⟹ B') with A ≟-c A' | B ≟-c B'
+      ... | yes refl  | yes refl  = yes refl
+      ... | no A≢A'   | _         = no λ{ refl → A≢A' refl}
+      ... | _         | no B≢B'   = no λ{ refl → B≢B' refl}
+      bool ≟-v str = no (λ())
+      bool ≟-v int = no (λ())
+      bool ≟-v unit = no (λ())
+      bool ≟-v void = no (λ())
+      bool ≟-v (_ —→ _) = no (λ())
+      bool ≟-v (_ ⟹ _) = no (λ())
+      str ≟-v bool = no (λ())
+      str ≟-v int = no (λ())
+      str ≟-v unit = no (λ())
+      str ≟-v void = no (λ())
+      str ≟-v (_ —→ _) = no (λ())
+      str ≟-v (_ ⟹ _) = no (λ())
+      int ≟-v bool = no (λ())
+      int ≟-v str = no (λ())
+      int ≟-v unit = no (λ())
+      int ≟-v void = no (λ())
+      int ≟-v (_ —→ _) = no (λ())
+      int ≟-v (_ ⟹ _) = no (λ())
+      unit ≟-v bool = no (λ())
+      unit ≟-v str = no (λ())
+      unit ≟-v int = no (λ())
+      unit ≟-v void = no (λ())
+      unit ≟-v (_ —→ _) = no (λ())
+      unit ≟-v (_ ⟹ _) = no (λ())
+      void ≟-v bool = no (λ())
+      void ≟-v str = no (λ())
+      void ≟-v int = no (λ())
+      void ≟-v unit = no (λ())
+      void ≟-v void = yes refl
+      void ≟-v (_ —→ _) = no (λ())
+      void ≟-v (_ ⟹ _) = no (λ())
+      (_ —→ _) ≟-v bool = no (λ())
+      (_ —→ _) ≟-v str = no (λ())
+      (_ —→ _) ≟-v int = no (λ())
+      (_ —→ _) ≟-v unit = no (λ())
+      (_ —→ _) ≟-v void = no (λ())
+      (_ —→ _) ≟-v (_ ⟹ _) = no (λ())
+      (_ ⟹ _) ≟-v bool = no (λ())
+      (_ ⟹ _) ≟-v str = no (λ())
+      (_ ⟹ _) ≟-v int = no (λ())
+      (_ ⟹ _) ≟-v unit = no (λ())
+      (_ ⟹ _) ≟-v void = no (λ())
+      (_ ⟹ _) ≟-v (_ —→ _) = no (λ())
+
+      (x₁ ! Δ₁) ≟-c (x₂ ! Δ₂) with x₁ ≟-v x₂ | Δ₁ ≟-Δ Δ₂
+      ... | _         | no Δ₁≢Δ₂  = no λ { refl → Δ₁≢Δ₂ refl}
+      ... | no x₁≢x₂  | _         = no λ { refl → x₁≢x₂ refl}
+      ... | yes refl  | yes refl  = yes refl
+
+      ∅ₑₗ ≟-Δ ∅ₑₗ = yes refl
+      ∅ₑₗ ≟-Δ (Δ₂ ,ₑₗ x) = no (λ())
+      (Δ₁ ,ₑₗ x) ≟-Δ ∅ₑₗ = no (λ())
+      (Δ₁ ,ₑₗ x₁) ≟-Δ (Δ₂ ,ₑₗ x₂)  with x₁ ≟ x₂ 
+      ... | no x₁≢x₂ = no λ { refl → x₁≢x₂ refl}
+      ... | yes refl with Δ₁ ≟-Δ Δ₂
+      ...   | no Δ₁≢Δ₂ = no λ { refl → Δ₁≢Δ₂ refl}
+      ...   | yes refl = yes refl
 
       data _∋ₑₗ_ : OpLabelContext → String → Set 
         where
@@ -60,7 +145,21 @@ module effect.Lang where
               → Δ ∋ₑₗ oL
               → Δ ,ₑₗ oL' ∋ₑₗ oL
 
+      -- This is used for proof by reflection
+      -- So that we can just specify the label of the effect and the proof is found automatically
+      _∋ₑₗ?_  : (Δ : OpLabelContext)
+              → (opLabel : String)
+              → Dec (Δ ∋ₑₗ opLabel)
+      ∅ₑₗ ∋ₑₗ? opLabel = no (λ())
+      (Δ ,ₑₗ x) ∋ₑₗ? opLabel with opLabel ≟ x
+      ... | yes refl = yes Zₑₗ
+      ... | no opLabel≢x with Δ ∋ₑₗ? opLabel
+      ...   | yes ∋opLabel = yes (Sₑₗ opLabel≢x ∋opLabel)
+      ...   | no ¬∋opLabel = no (λ{ Zₑₗ → opLabel≢x refl
+                                  ; (Sₑₗ _ ∋opLabel) → ¬∋opLabel ∋opLabel})
+
       module OpLabelContextOps where
+        open import Data.String.Properties using (_≟_)
 
         contains : (Δ : OpLabelContext) → (oL : String) → Dec (Δ ∋ₑₗ oL)
         contains ∅ₑₗ oL = no λ()
@@ -100,8 +199,16 @@ module effect.Lang where
               → Operation label A B → String
         label (label ⦂ _ —→ _) = label
 
-      open OperationOps public
-      
+        _≟-op_  : ∀ {label A B}
+                → (op : Operation label A B)
+                → (op' : Operation label A B)
+                → Dec (op ≡ op')
+        (label ⦂ A —→ B) ≟-op (label' ⦂ A' —→ B') with label ≟ label' | A ≟-v A' | B ≟-v B' 
+        ... | yes refl        | yes refl  | yes refl  = yes refl
+        ... | no label≢label' | _         | _         = no λ  {refl → label≢label' refl}
+        ... | _               | no A≢A'   | _         = no λ  {refl → A≢A' refl}
+        ... | _               | _         | no B≢B'   = no λ  {refl → B≢B' refl}
+
     open Type public
 
     data Context : Set where
@@ -136,6 +243,40 @@ module effect.Lang where
               {op : Operation label A B} {op' : Operation label' A' B'}
             → Γ ∋ₑ op
             → Γ ,ₑ op' ∋ₑ op
+
+    -- This is used for proof by reflection
+    -- So that we can just specify the label of the effect and the proof is found automatically
+    open import Data.String.Properties using (_≟_)
+    open OperationOps
+
+    _∋ₑ?_ : {A B : ValueType} {label : String}
+          → (Σ : OpContext)
+          → (op : Operation label A B)
+          → Dec (Σ ∋ₑ op)
+    ∅ₑ ∋ₑ? op = no (λ())
+    _∋ₑ?_ {A = A} {B = B} {label = label} (_,ₑ_ {label = label'} {A = A'} {B = B'} Σ op') op 
+      with label ≟ label' | A ≟-v A'  | B ≟-v B'
+    ... | no label≢label' | _         | _       = 
+      case (Σ ∋ₑ? op) of 
+        λ { (yes ∋ₑop) → yes (Sₑ ∋ₑop) 
+          ; (no ∌ₑop) → no (λ{ Zₑ → label≢label' refl
+                              ; (Sₑ ∋ₑop) → ∌ₑop ∋ₑop}) }
+    ... | yes _           | no A≢A'   | _       = 
+      case (Σ ∋ₑ? op) of
+        λ { (yes ∋ₑop) → yes (Sₑ ∋ₑop)
+          ; (no ∌ₑop) → no (λ{ Zₑ → A≢A' refl
+                             ; (Sₑ ∋ₑop) → ∌ₑop ∋ₑop}) }
+    ... | _               | _         | no B≢B' = 
+      case (Σ ∋ₑ? op) of
+        λ { (yes ∋ₑop) → yes (Sₑ ∋ₑop)
+          ; (no ∌ₑop) → no (λ{ Zₑ → B≢B' refl
+                             ; (Sₑ ∋ₑop) → ∌ₑop ∋ₑop})}
+    ... | yes refl        | yes refl  | yes refl with op ≟-op op'
+    ...   | yes refl                            = yes Zₑ
+    ...   | no op≢op' with Σ ∋ₑ? op
+    ...     | yes ∋ₑop                          = yes (Sₑ ∋ₑop)
+    ...     | no ∌ₑop                           = no (λ { Zₑ → op≢op' refl
+                                                        ; (Sₑ ∋ₑop) → ∌ₑop ∋ₑop})
 
     -- Thought it's appropriate to have effect context as a parameterized type since it's not supposed to change.
     -- Term typing rules are mutually recursive
@@ -187,11 +328,12 @@ module effect.Lang where
                 → Σ ⨟ Γ ⊢c A ! Δ
 
         -- Op rule
-        `op_∧_[_]⇒_ : {Δ : OpLabelContext} 
+        `op_[_]⇒_ : {Δ : OpLabelContext} 
                       {A Aₒₚ Bₒₚ : ValueType}
-                      {opLabel : String} {op : Operation opLabel Aₒₚ Bₒₚ}
-                    → Δ ∋ₑₗ opLabel
-                    → Σ ∋ₑ op
+                      {opLabel : String} 
+                    → (op : Operation opLabel Aₒₚ Bₒₚ)
+                    → {True (Δ ∋ₑₗ? opLabel)}
+                    → {True (Σ ∋ₑ? op)}
                     → Σ ⨟ Γ ⊢v Aₒₚ
                     → Σ ⨟ Γ , Bₒₚ ⊢c A ! Δ
                     → Σ ⨟ Γ ⊢c A ! Δ
@@ -244,8 +386,10 @@ module effect.Lang where
     renameᵥ ρ (`fun ⊢body) = `fun (renameₑ (ext ρ) ⊢body)
     
     renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
-    renameₑ ρ (`op ∋oL ∧ ∋op [ ⊢arg ]⇒ ⊢body) = 
-      `op ∋oL ∧ ∋op [ renameᵥ ρ ⊢arg ]⇒ renameₑ (ext ρ) ⊢body
+    renameₑ ρ (`op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} ⊢arg ⊢body) = 
+      `op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} 
+        (renameᵥ ρ ⊢arg) 
+        (renameₑ (ext ρ) ⊢body)
     renameₑ ρ (`do←— ⊢var `in ⊢body) = 
       `do←— (renameₑ ρ ⊢var) `in (renameₑ (ext ρ) ⊢body)
     renameₑ ρ (⊢f `· ⊢g) = (renameᵥ ρ ⊢f) `· (renameᵥ ρ ⊢g)
@@ -269,18 +413,15 @@ module effect.Lang where
 
 
     module SyntaxSugar where
-      infix 6 opCall[_∧_]
-      
-      -- Syntax sugar for effect calls
-      opCall[_∧_]  : {A B : ValueType}
-              {opLabel : String}
-              {Σ : OpContext} {Δ : OpLabelContext}
-              -- https://plfa.github.io/Decidable/?dark=true
-              {op : Operation opLabel A B}
-            → (∋oL : Δ ∋ₑₗ opLabel)
-            → (∋op : Σ ∋ₑ op)
-            → Σ ⨟ ∅ ⊢v A —→ B ! Δ
-            
-      opCall[ ∋oL ∧ ∋op ] = `fun (`op ∋oL ∧ ∋op [ ` Z ]⇒ `return (` Z))
-     
-    open SyntaxSugar
+
+      opCall[_] : {A B : ValueType}
+                  {Σ : OpContext} {Δ : OpLabelContext}
+                  {opLabel : String}
+                → (op : Operation opLabel A B)
+                → {True (Δ ∋ₑₗ? opLabel)}
+                → {True (Σ ∋ₑ? op)}
+                → Σ ⨟ ∅ ⊢v A —→ B ! Δ
+      opCall[_] op {∋ₑₗ?opLabel} {∋ₑ?op} =
+        `fun (`op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} (` Z) (`return (` Z)))
+              
+    open SyntaxSugar    
