@@ -219,6 +219,41 @@ module effect.Lang where
                       → Σ > Γ ⊢c A ! Δ' 
                       → Σ > Γ ⊢c B ! Δ
 
+    Rename : Context → Context → Set
+    Rename Γ Δ = ∀ {A} → Γ ∋ A → Δ ∋ A
+
+    ext : {Γ Δ : Context}
+        → Rename Γ Δ
+        → ∀ {B} → Rename (Γ , B) (Δ , B)
+    ext ρ Z = Z
+    ext ρ (S x) = S (ρ x)
+
+    renameᵥ  : {Σ : OpContext} {Γ Δ : Context}
+            → Rename Γ Δ
+            → ∀ {A} → Σ > Γ ⊢v A → Σ > Δ ⊢v A
+
+    renameₑ  : {Σ : OpContext} {Γ Δ : Context}
+            → Rename Γ Δ
+            → ∀ {A} → Σ > Γ ⊢c A → Σ > Δ ⊢c A
+
+    renameᵥ ρ (` ∋x) = ` (ρ ∋x)
+    renameᵥ ρ `true = `true
+    renameᵥ ρ `false = `false
+    renameᵥ ρ `unit = `unit
+    renameᵥ ρ (`s s) = `s s
+    renameᵥ ρ (`fun ⊢body) = `fun (renameₑ (ext ρ) ⊢body)
+    
+    renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
+    renameₑ ρ (`op ∋oL ∧ ∋op [ ⊢arg ]⇒ ⊢body) = 
+      `op ∋oL ∧ ∋op [ renameᵥ ρ ⊢arg ]⇒ renameₑ (ext ρ) ⊢body
+    renameₑ ρ (`do←— ⊢var `in ⊢body) = 
+      `do←— (renameₑ ρ ⊢var) `in (renameₑ (ext ρ) ⊢body)
+    renameₑ ρ (⊢f `· ⊢g) = (renameᵥ ρ ⊢f) `· (renameᵥ ρ ⊢g)
+    renameₑ ρ (`if ⊢cond then ⊢then else ⊢else) = 
+      `if (renameᵥ ρ ⊢cond) then (renameₑ ρ ⊢then) else (renameₑ ρ ⊢else)
+    renameₑ ρ (`with ⊢handler handle ⊢body) = 
+      `with (renameᵥ ρ ⊢handler) handle (renameₑ ρ ⊢body)
+
     weakenᵥ : {Σ : OpContext}
               {Γ : Context} {A B : ValueType}
             → Σ > Γ ⊢v A
@@ -228,29 +263,9 @@ module effect.Lang where
             → Σ > Γ ⊢c A ! Δ
             → Σ > Γ , B ⊢c A ! Δ
 
-    swap  : {Σ : OpContext} {Δ : OpLabelContext}
-            {Γ : Context} {A B C : ValueType}
-          → Σ > Γ , A , B ⊢c C ! Δ
-          → Σ > Γ , B , A ⊢c C ! Δ
-    swap x = {!   !}
+    weakenᵥ ⊢v = renameᵥ (S_) ⊢v
 
-    weakenᵥ (` ∋x) = ` (S ∋x)
-    weakenᵥ `true = `true
-    weakenᵥ `false = `false
-    weakenᵥ `unit = `unit
-    weakenᵥ (`s `str) = `s `str
-    weakenᵥ (`fun ⊢c) = `fun (swap (weakenₑ ⊢c))
-
-    weakenₑ (`return ⊢v) = `return (weakenᵥ ⊢v)
-    weakenₑ (`op x ∧ x₁ [ opArg ]⇒ opKont) = 
-      `op x ∧ x₁ [ weakenᵥ opArg ]⇒ swap (weakenₑ  opKont)
-    weakenₑ (`do←— ⊢arg `in ⊢body) = 
-      `do←— (weakenₑ ⊢arg) `in (swap (weakenₑ ⊢body))
-    weakenₑ (⊢f `· ⊢x) = (weakenᵥ ⊢f) `· (weakenᵥ ⊢x)
-    weakenₑ (`if ⊢cond then ⊢then else ⊢else) = 
-      `if (weakenᵥ ⊢cond) then (weakenₑ ⊢then) else (weakenₑ ⊢else)
-    weakenₑ (`with ⊢handler handle ⊢body) = 
-      `with (weakenᵥ ⊢handler) handle weakenₑ ⊢body 
+    weakenₑ ⊢c = renameₑ (S_) ⊢c
 
 
     module SyntaxSugar where
@@ -267,5 +282,5 @@ module effect.Lang where
             → Σ > ∅ ⊢v A —→ B ! Δ
             
       opCall[ ∋oL ∧ ∋op ] = `fun (`op ∋oL ∧ ∋op [ ` Z ]⇒ `return (` Z))
-    
+     
     open SyntaxSugar
