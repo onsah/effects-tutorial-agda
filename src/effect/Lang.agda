@@ -172,6 +172,9 @@ module effect.Lang where
 
         -- TODO: How to implement?
         data _⊆_ : OpLabelContext → OpLabelContext → Set where
+          subset  : {Δ Δ' : OpLabelContext}
+                  → (∀ (s : String) → Δ ∋ₑₗ s → Δ' ∋ₑₗ s)
+                  → Δ ⊆ Δ'
 
         fromVec : {n : ℕ}
                 → Vec String n
@@ -308,16 +311,16 @@ module effect.Lang where
         `handler  : {Δ Δ' : OpLabelContext}
                     {n : ℕ} {A B : ValueType}
                     {opLabels : Vec String n}
+                  -- TODO: data Handler
                   -- Return handler body
                   → Σ ⨟ Γ , A ⊢c B ! Δ'
                   -- Asserts that every effect handler body is well typed according to it's effect
                   -- Make it it's own definition
-                  → ∀ (i : Fin n) → 
-                    -- TODO: Have a record for the return
+                  → (∀ (i : Fin n) → 
                       ∃[ Aᵢ ] ∃[ Bᵢ ] 
                         Σ[ op ∈ Operation (lookup opLabels i) Aᵢ Bᵢ ] 
                           Σ ∋ₑ op × 
-                          (Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ') ⊢c B ! Δ')
+                          (Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ') ⊢c B ! Δ'))
                   → (Δ \' (fromVec opLabels)) ⊆ Δ'
                   → Σ ⨟ Γ ⊢v A ! Δ ⟹ B ! Δ'
 
@@ -384,6 +387,7 @@ module effect.Lang where
     renameᵥ ρ `unit = `unit
     renameᵥ ρ (`s s) = `s s
     renameᵥ ρ (`fun ⊢body) = `fun (renameₑ (ext ρ) ⊢body)
+    renameᵥ ρ (`handler x x₁ x₂) = {!   !}
     
     renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
     renameₑ ρ (`op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} ⊢arg ⊢body) = 
