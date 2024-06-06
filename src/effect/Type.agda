@@ -115,36 +115,36 @@ module effect.Type where
 
     data _∋-oL_ : OpLabels → String → Set 
         where
-        Z : {Δ : OpLabels} {oL : String}
+        Z-oL : {Δ : OpLabels} {oL : String}
             → Δ , oL ∋-oL oL
     
-        S  : {Δ : OpLabels}
-                {oL oL' : String}
-                → ¬ (oL ≡ oL')
-                → Δ ∋-oL oL
-                → Δ , oL' ∋-oL oL
+        S-oL : {Δ : OpLabels}
+            {oL oL' : String}
+          → ¬ (oL ≡ oL')
+          → Δ ∋-oL oL
+          → Δ , oL' ∋-oL oL
 
     -- This is used for proof by reflection
     -- So that we can just specify the label of the effect and the proof is found automatically
-    _∋ₑₗ?_  : (Δ : OpLabels)
+    _∋-oL?_  : (Δ : OpLabels)
             → (opLabel : String)
             → Dec (Δ ∋-oL opLabel)
-    ∅ ∋ₑₗ? opLabel = no (λ())
-    (Δ , x) ∋ₑₗ? opLabel with opLabel ≟ x
-    ... | yes refl = yes Z
-    ... | no opLabel≢x with Δ ∋ₑₗ? opLabel
-    ...   | yes ∋opLabel = yes (S opLabel≢x ∋opLabel)
-    ...   | no ¬∋opLabel = no (λ{ Z → opLabel≢x refl
-                                ; (S _ ∋opLabel) → ¬∋opLabel ∋opLabel})
+    ∅ ∋-oL? opLabel = no (λ())
+    (Δ , x) ∋-oL? opLabel with opLabel ≟ x
+    ... | yes refl = yes Z-oL
+    ... | no opLabel≢x with Δ ∋-oL? opLabel
+    ...   | yes ∋opLabel = yes (S-oL opLabel≢x ∋opLabel)
+    ...   | no ¬∋opLabel = no (λ{ Z-oL → opLabel≢x refl
+                                ; (S-oL _ ∋opLabel) → ¬∋opLabel ∋opLabel})
 
     contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋-oL oL)
     contains ∅ oL = no λ()
     contains (Δ , oL') oL with oL ≟ oL'
-    ... | yes refl = yes Z
+    ... | yes refl = yes Z-oL
     ... | no ¬Z with contains Δ oL
-    ...   | yes ∋oL = yes (S ¬Z ∋oL)
-    ...   | no ¬S = no (λ{ Z → ¬Z refl
-                        ; (S _ ∋oL) → ¬S ∋oL}) 
+    ...   | yes ∋oL = yes (S-oL ¬Z ∋oL)
+    ...   | no ¬S = no (λ{ Z-oL → ¬Z refl
+                        ; (S-oL _ ∋oL) → ¬S ∋oL}) 
 
     _⊆_ : OpLabels → OpLabels → Set
     Δ ⊆ Δ' = ∀ (s : String) → Δ ∋-oL s → Δ' ∋-oL s
@@ -175,3 +175,4 @@ module effect.Type where
     ... | no label≢label' | _         | _         = no λ  {refl → label≢label' refl}
     ... | _               | no A≢A'   | _         = no λ  {refl → A≢A' refl}
     ... | _               | _         | no B≢B'   = no λ  {refl → B≢B' refl}
+ 

@@ -86,7 +86,7 @@ module effect.Term where
                       {A Aₒₚ Bₒₚ : ValueType}
                       {opLabel : String} 
                     → (op : Operation opLabel Aₒₚ Bₒₚ)
-                    → {True (Δ ∋ₑₗ? opLabel)}
+                    → {True (Δ ∋-oL? opLabel)}
                     → {True (Σ ∋ₑ? op)}
                     → Σ ⨟ Γ ⊢v Aₒₚ
                     → Σ ⨟ Γ , Bₒₚ ⊢c A ! Δ
@@ -170,8 +170,8 @@ module effect.Term where
                     (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ effects) ⊆Δ')
     
     renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
-    renameₑ ρ (`op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} ⊢arg ⊢body) = 
-      `op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} 
+    renameₑ ρ (`op_[_]⇒_ op {∋-oL?opLabel} {∋ₑ?op} ⊢arg ⊢body) = 
+      `op_[_]⇒_ op {∋-oL?opLabel} {∋ₑ?op} 
         (renameᵥ ρ ⊢arg) 
         (renameₑ (ext ρ) ⊢body)
     renameₑ ρ (`do←— ⊢var `in ⊢body) = 

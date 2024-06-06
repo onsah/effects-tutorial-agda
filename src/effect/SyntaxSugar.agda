@@ -13,11 +13,11 @@ module effect.SyntaxSugar where
                 {Σ : OpContext} {Δ : OpLabels}
                 {opLabel : String}
               → (op : Operation opLabel A B)
-              → {True (Δ ∋ₑₗ? opLabel)}
+              → {True (Δ ∋-oL? opLabel)}
               → {True (Σ ∋ₑ? op)}
               → Σ ⨟ ∅ ⊢v A —→ B ! Δ
-    opCall[_] op {∋ₑₗ?opLabel} {∋ₑ?op} =
-      `fun (`op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} (` Z) (`return (` Z)))
+    opCall[_] op {∋?opLabel} {∋ₑ?op} =
+      `fun (`op_[_]⇒_ op {∋?opLabel} {∋ₑ?op} (` Z) (`return (` Z)))
 
     open import Data.Nat using (_<_; _≤?_; zero; suc; s≤s)
     open import Relation.Nullary.Decidable using (toWitness)
