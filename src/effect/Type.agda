@@ -14,7 +14,7 @@ module effect.Type where
 
     data ValueType : Set
     data ComputationType : Set
-    data OpLabelContext : Set
+    data OpLabels : Set
 
     data ValueType where
         bool : ValueType
@@ -27,11 +27,11 @@ module effect.Type where
 
     data ComputationType where
         -- Operation list is an overappromixation of what the computation actually uses.
-        _!_ : ValueType → OpLabelContext → ComputationType
+        _!_ : ValueType → OpLabels → ComputationType
 
-    data OpLabelContext where
-        ∅ₑₗ : OpLabelContext
-        _,ₑₗ_ : OpLabelContext → String → OpLabelContext
+    data OpLabels where
+        ∅ₑₗ : OpLabels
+        _,ₑₗ_ : OpLabels → String → OpLabels
 
     _≟-v_ : (A : ValueType)
         → (B : ValueType)
@@ -39,8 +39,8 @@ module effect.Type where
     _≟-c_ : (A : ComputationType)
         → (B : ComputationType)
         → Dec (A ≡ B)
-    _≟-Δ_ : (Δ₁ : OpLabelContext)
-        → (Δ₂ : OpLabelContext)
+    _≟-Δ_ : (Δ₁ : OpLabels)
+        → (Δ₂ : OpLabels)
         → Dec (Δ₁ ≡ Δ₂)
     
     bool ≟-v bool = yes refl
@@ -113,12 +113,12 @@ module effect.Type where
     ...   | no Δ₁≢Δ₂ = no λ { refl → Δ₁≢Δ₂ refl}
     ...   | yes refl = yes refl
 
-    data _∋ₑₗ_ : OpLabelContext → String → Set 
+    data _∋ₑₗ_ : OpLabels → String → Set 
         where
-        Zₑₗ : {Δ : OpLabelContext} {oL : String}
+        Zₑₗ : {Δ : OpLabels} {oL : String}
             → Δ ,ₑₗ oL ∋ₑₗ oL
     
-        Sₑₗ  : {Δ : OpLabelContext}
+        Sₑₗ  : {Δ : OpLabels}
                 {oL oL' : String}
                 → ¬ (oL ≡ oL')
                 → Δ ∋ₑₗ oL
@@ -126,7 +126,7 @@ module effect.Type where
 
     -- This is used for proof by reflection
     -- So that we can just specify the label of the effect and the proof is found automatically
-    _∋ₑₗ?_  : (Δ : OpLabelContext)
+    _∋ₑₗ?_  : (Δ : OpLabels)
             → (opLabel : String)
             → Dec (Δ ∋ₑₗ opLabel)
     ∅ₑₗ ∋ₑₗ? opLabel = no (λ())
@@ -137,7 +137,7 @@ module effect.Type where
     ...   | no ¬∋opLabel = no (λ{ Zₑₗ → opLabel≢x refl
                                 ; (Sₑₗ _ ∋opLabel) → ¬∋opLabel ∋opLabel})
 
-    contains : (Δ : OpLabelContext) → (oL : String) → Dec (Δ ∋ₑₗ oL)
+    contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋ₑₗ oL)
     contains ∅ₑₗ oL = no λ()
     contains (Δ ,ₑₗ oL') oL with oL ≟ oL'
     ... | yes refl = yes Zₑₗ
@@ -146,10 +146,10 @@ module effect.Type where
     ...   | no ¬S = no (λ{ Zₑₗ → ¬Z refl
                         ; (Sₑₗ _ ∋oL) → ¬S ∋oL}) 
 
-    _⊆_ : OpLabelContext → OpLabelContext → Set
+    _⊆_ : OpLabels → OpLabels → Set
     Δ ⊆ Δ' = ∀ (s : String) → Δ ∋ₑₗ s → Δ' ∋ₑₗ s
 
-    _\'_ : OpLabelContext → OpLabelContext → OpLabelContext
+    _\'_ : OpLabels → OpLabels → OpLabels
     ∅ₑₗ \' Δ' = ∅ₑₗ
     (Δ ,ₑₗ x) \' Δ' with contains Δ' x
     ... | yes _ = Δ \' Δ'

@@ -23,7 +23,7 @@ module effect.Term where
 
     data HandlerContext (Σ : OpContext) (Γ : Context) 
                         (B : ValueType)
-                        (Δ : OpLabelContext) : Set 
+                        (Δ : OpLabels) : Set 
       where
       ∅       : HandlerContext Σ Γ B Δ
       _,[_⇒_] : {label : String} {Aᵢ Bᵢ : ValueType}
@@ -35,7 +35,7 @@ module effect.Term where
 
     -- Asserts that every effect handler body is well typed according to it's effect
     record Handlers  (Σ : OpContext) (Γ : Context) 
-                    (A B : ValueType) (Δ : OpLabelContext) : Set 
+                    (A B : ValueType) (Δ : OpLabels) : Set 
       where
       inductive
       field
@@ -43,9 +43,9 @@ module effect.Term where
         effects : HandlerContext Σ Γ B Δ
 
     ops : {Σ : OpContext} {Γ : Context}
-          {B : ValueType} {Δ : OpLabelContext}
+          {B : ValueType} {Δ : OpLabels}
         → HandlerContext Σ Γ B Δ 
-        → OpLabelContext
+        → OpLabels
     ops ∅ = ∅ₑₗ
     ops (_,[_⇒_] {label = label} Υ _ _) = (ops Υ) ,ₑₗ label
 
@@ -65,11 +65,11 @@ module effect.Term where
         `s  : String
             → Σ ⨟ Γ ⊢v str
 
-        `fun : {A B : ValueType} {Δ : OpLabelContext}
+        `fun : {A B : ValueType} {Δ : OpLabels}
              → Σ ⨟ (Γ , A) ⊢c B ! Δ
              → Σ ⨟ Γ ⊢v A —→ B ! Δ
 
-        `handler  : {Δ Δ' : OpLabelContext}
+        `handler  : {Δ Δ' : OpLabels}
                     {A B : ValueType}
                   → (handlers : Handlers Σ Γ A B Δ')
                   → (Δ \' (ops (Handlers.effects handlers))) ⊆ Δ'
@@ -77,12 +77,12 @@ module effect.Term where
 
     data _⨟_⊢c_ Σ Γ where
         
-        `return : {A : ValueType} {Δ : OpLabelContext}
+        `return : {A : ValueType} {Δ : OpLabels}
                 → Σ ⨟ Γ ⊢v A
                 → Σ ⨟ Γ ⊢c A ! Δ
 
         -- Op rule
-        `op_[_]⇒_ : {Δ : OpLabelContext} 
+        `op_[_]⇒_ : {Δ : OpLabels} 
                       {A Aₒₚ Bₒₚ : ValueType}
                       {opLabel : String} 
                     → (op : Operation opLabel Aₒₚ Bₒₚ)
@@ -92,7 +92,7 @@ module effect.Term where
                     → Σ ⨟ Γ , Bₒₚ ⊢c A ! Δ
                     → Σ ⨟ Γ ⊢c A ! Δ
 
-        `do←—_`in_  : {Δ : OpLabelContext} 
+        `do←—_`in_  : {Δ : OpLabels} 
                       {A B : ValueType}
                     → Σ ⨟ Γ ⊢c A ! Δ
                     → Σ ⨟ Γ , A ⊢c B ! Δ
@@ -109,7 +109,7 @@ module effect.Term where
                       → Σ ⨟ Γ ⊢c Aₑ
                       → Σ ⨟ Γ ⊢c Aₑ
 
-        `with_handle_ : {Δ Δ' : OpLabelContext}
+        `with_handle_ : {Δ Δ' : OpLabels}
                         {A B : ValueType}
                       → Σ ⨟ Γ ⊢v A ! Δ' ⟹ B ! Δ
                       → Σ ⨟ Γ ⊢c A ! Δ' 
@@ -134,7 +134,7 @@ module effect.Term where
 
     rename-effects  : {Σ : OpContext} {Γ Γ' : Context}
                 → Rename Γ Γ'
-                → {B : ValueType} {Δ : OpLabelContext}
+                → {B : ValueType} {Δ : OpLabels}
                 → HandlerContext Σ Γ B Δ
                 → HandlerContext Σ Γ' B Δ
     rename-effects ρ ∅ = ∅
@@ -143,7 +143,7 @@ module effect.Term where
 
     -- ops under rename doesn't change
     ops-≡-rename  : {Σ : OpContext} {Γ Γ' : Context}
-                    {B : ValueType} {Δ : OpLabelContext}
+                    {B : ValueType} {Δ : OpLabels}
                   → (ρ : Rename Γ Γ')
                   → (handler  : HandlerContext Σ Γ B Δ)
                   → (ops handler) ≡ (ops (rename-effects ρ handler))
@@ -186,7 +186,7 @@ module effect.Term where
               {Γ : Context} {A B : ValueType}
             → Σ ⨟ Γ ⊢v A
             → Σ ⨟ Γ , B ⊢v A
-    weakenₑ : {Σ : OpContext} {Δ : OpLabelContext}
+    weakenₑ : {Σ : OpContext} {Δ : OpLabels}
               {Γ : Context} {A B : ValueType}
             → Σ ⨟ Γ ⊢c A ! Δ
             → Σ ⨟ Γ , B ⊢c A ! Δ

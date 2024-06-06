@@ -10,7 +10,7 @@ open import effect.Term
 module effect.SyntaxSugar where
 
     opCall[_] : {A B : ValueType}
-                {Σ : OpContext} {Δ : OpLabelContext}
+                {Σ : OpContext} {Δ : OpLabels}
                 {opLabel : String}
               → (op : Operation opLabel A B)
               → {True (Δ ∋ₑₗ? opLabel)}
