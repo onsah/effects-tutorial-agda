@@ -5,7 +5,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 module effect.Type where
     
-    infix  4 _∋ₑₗ_
+    infix  4 _∋-oL_
     infixl 5 _,_
     infix 6 _!_
     infixr 5 _—→_
@@ -113,22 +113,22 @@ module effect.Type where
     ...   | no Δ₁≢Δ₂ = no λ { refl → Δ₁≢Δ₂ refl}
     ...   | yes refl = yes refl
 
-    data _∋ₑₗ_ : OpLabels → String → Set 
+    data _∋-oL_ : OpLabels → String → Set 
         where
         Zₑₗ : {Δ : OpLabels} {oL : String}
-            → Δ , oL ∋ₑₗ oL
+            → Δ , oL ∋-oL oL
     
         Sₑₗ  : {Δ : OpLabels}
                 {oL oL' : String}
                 → ¬ (oL ≡ oL')
-                → Δ ∋ₑₗ oL
-                → Δ , oL' ∋ₑₗ oL
+                → Δ ∋-oL oL
+                → Δ , oL' ∋-oL oL
 
     -- This is used for proof by reflection
     -- So that we can just specify the label of the effect and the proof is found automatically
     _∋ₑₗ?_  : (Δ : OpLabels)
             → (opLabel : String)
-            → Dec (Δ ∋ₑₗ opLabel)
+            → Dec (Δ ∋-oL opLabel)
     ∅ ∋ₑₗ? opLabel = no (λ())
     (Δ , x) ∋ₑₗ? opLabel with opLabel ≟ x
     ... | yes refl = yes Zₑₗ
@@ -137,7 +137,7 @@ module effect.Type where
     ...   | no ¬∋opLabel = no (λ{ Zₑₗ → opLabel≢x refl
                                 ; (Sₑₗ _ ∋opLabel) → ¬∋opLabel ∋opLabel})
 
-    contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋ₑₗ oL)
+    contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋-oL oL)
     contains ∅ oL = no λ()
     contains (Δ , oL') oL with oL ≟ oL'
     ... | yes refl = yes Zₑₗ
@@ -147,7 +147,7 @@ module effect.Type where
                         ; (Sₑₗ _ ∋oL) → ¬S ∋oL}) 
 
     _⊆_ : OpLabels → OpLabels → Set
-    Δ ⊆ Δ' = ∀ (s : String) → Δ ∋ₑₗ s → Δ' ∋ₑₗ s
+    Δ ⊆ Δ' = ∀ (s : String) → Δ ∋-oL s → Δ' ∋-oL s
 
     _\'_ : OpLabels → OpLabels → OpLabels
     ∅ \' Δ' = ∅
