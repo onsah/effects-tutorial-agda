@@ -11,6 +11,8 @@ open import Data.Product using (Σ-syntax; ∃-syntax; _×_) renaming (_,′_ to
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Relation.Nullary.Decidable using (True)
 
+open import effect.Util
+
 module effect.Lang where
 
     infix 3 _⨟_⊢v_
@@ -19,9 +21,6 @@ module effect.Lang where
     infix  4 _∋ₑ_
     infixl 5 _,_
     infixl 5 _,ₑ_
-
-    case_of_ : ∀ {a b} {A : Set a} {B : Set b} → A → (A → B) → B
-    case x of f = f x
 
     module Type where
       open import Data.String.Properties using (_≟_)
