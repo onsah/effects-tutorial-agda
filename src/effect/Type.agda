@@ -30,7 +30,7 @@ module effect.Type where
         _!_ : ValueType → OpLabels → ComputationType
 
     data OpLabels where
-        ∅ₑₗ : OpLabels
+        ∅ : OpLabels
         _,ₑₗ_ : OpLabels → String → OpLabels
 
     _≟-v_ : (A : ValueType)
@@ -104,9 +104,9 @@ module effect.Type where
     ... | no x₁≢x₂  | _         = no λ { refl → x₁≢x₂ refl}
     ... | yes refl  | yes refl  = yes refl
 
-    ∅ₑₗ ≟-Δ ∅ₑₗ = yes refl
-    ∅ₑₗ ≟-Δ (Δ₂ ,ₑₗ x) = no (λ())
-    (Δ₁ ,ₑₗ x) ≟-Δ ∅ₑₗ = no (λ())
+    ∅ ≟-Δ ∅ = yes refl
+    ∅ ≟-Δ (Δ₂ ,ₑₗ x) = no (λ())
+    (Δ₁ ,ₑₗ x) ≟-Δ ∅ = no (λ())
     (Δ₁ ,ₑₗ x₁) ≟-Δ (Δ₂ ,ₑₗ x₂)  with x₁ ≟ x₂ 
     ... | no x₁≢x₂ = no λ { refl → x₁≢x₂ refl}
     ... | yes refl with Δ₁ ≟-Δ Δ₂
@@ -129,7 +129,7 @@ module effect.Type where
     _∋ₑₗ?_  : (Δ : OpLabels)
             → (opLabel : String)
             → Dec (Δ ∋ₑₗ opLabel)
-    ∅ₑₗ ∋ₑₗ? opLabel = no (λ())
+    ∅ ∋ₑₗ? opLabel = no (λ())
     (Δ ,ₑₗ x) ∋ₑₗ? opLabel with opLabel ≟ x
     ... | yes refl = yes Zₑₗ
     ... | no opLabel≢x with Δ ∋ₑₗ? opLabel
@@ -138,7 +138,7 @@ module effect.Type where
                                 ; (Sₑₗ _ ∋opLabel) → ¬∋opLabel ∋opLabel})
 
     contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋ₑₗ oL)
-    contains ∅ₑₗ oL = no λ()
+    contains ∅ oL = no λ()
     contains (Δ ,ₑₗ oL') oL with oL ≟ oL'
     ... | yes refl = yes Zₑₗ
     ... | no ¬Z with contains Δ oL
@@ -150,7 +150,7 @@ module effect.Type where
     Δ ⊆ Δ' = ∀ (s : String) → Δ ∋ₑₗ s → Δ' ∋ₑₗ s
 
     _\'_ : OpLabels → OpLabels → OpLabels
-    ∅ₑₗ \' Δ' = ∅ₑₗ
+    ∅ \' Δ' = ∅
     (Δ ,ₑₗ x) \' Δ' with contains Δ' x
     ... | yes _ = Δ \' Δ'
     ... | no _ = (Δ \' Δ') ,ₑₗ x

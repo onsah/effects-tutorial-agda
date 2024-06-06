@@ -46,7 +46,7 @@ module effect.Term where
           {B : ValueType} {Δ : OpLabels}
         → HandlerContext Σ Γ B Δ 
         → OpLabels
-    ops ∅ = ∅ₑₗ
+    ops ∅ = ∅
     ops (_,[_⇒_] {label = label} Υ _ _) = (ops Υ) ,ₑₗ label
 
     -- Value terms
