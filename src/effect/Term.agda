@@ -2,7 +2,6 @@
 
 open import Agda.Builtin.String using (String)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; subst)
-open import Data.Nat using (ℕ)
 open import Data.Product using (Σ-syntax; ∃-syntax; _×_) renaming (_,′_ to ⟨_,_⟩)
 open import Relation.Nullary.Decidable using (True)
 
@@ -195,46 +194,4 @@ module effect.Term where
     weakenᵥ ⊢v = renameᵥ (S_) ⊢v
 
     weakenₑ ⊢c = renameₑ (S_) ⊢c
-
-
-    module SyntaxSugar where
-
-      opCall[_] : {A B : ValueType}
-                  {Σ : OpContext} {Δ : OpLabelContext}
-                  {opLabel : String}
-                → (op : Operation opLabel A B)
-                → {True (Δ ∋ₑₗ? opLabel)}
-                → {True (Σ ∋ₑ? op)}
-                → Σ ⨟ ∅ ⊢v A —→ B ! Δ
-      opCall[_] op {∋ₑₗ?opLabel} {∋ₑ?op} =
-        `fun (`op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} (` Z) (`return (` Z)))
-
-      open import Data.Nat using (_<_; _≤?_; zero; suc; s≤s)
-      open import Relation.Nullary.Decidable using (toWitness)
-
-      private
-        length  : Context → ℕ
-        length ∅ = zero
-        length (Γ , _) = suc (length Γ)
-
-        lookup  : {Γ : Context} → {n : ℕ}
-                → (p : n < length Γ)
-                → ValueType
-        lookup {Γ = _ , A} {n = zero} _ = A
-        lookup {Γ = _ , _} {n = suc _} (s≤s p) = (lookup p)
-
-        count   : {Γ : Context} → {n : ℕ}
-                → (p : n < length Γ)
-                → Γ ∋ lookup p
-        count {Γ = _ , _} {n = zero } _ = Z
-        count {Γ = _ , _} {n = suc _} (s≤s p) = S (count p)
-
-      
-      #_ : ∀ {Γ : Context} {Σ : OpContext}
-        → (n : ℕ)
-        → {n∈Γ : True (suc n ≤? length Γ)}
-          --------------------------------
-        → Σ ⨟ Γ ⊢v lookup (toWitness n∈Γ)
-      #_ _ {n∈Γ = n∈Γ}  = ` (count (toWitness n∈Γ))
-                  
-    open SyntaxSugar    
+  
