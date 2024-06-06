@@ -118,7 +118,7 @@ module effect.Type where
         Z : {Δ : OpLabels} {oL : String}
             → Δ , oL ∋-oL oL
     
-        Sₑₗ  : {Δ : OpLabels}
+        S  : {Δ : OpLabels}
                 {oL oL' : String}
                 → ¬ (oL ≡ oL')
                 → Δ ∋-oL oL
@@ -133,18 +133,18 @@ module effect.Type where
     (Δ , x) ∋ₑₗ? opLabel with opLabel ≟ x
     ... | yes refl = yes Z
     ... | no opLabel≢x with Δ ∋ₑₗ? opLabel
-    ...   | yes ∋opLabel = yes (Sₑₗ opLabel≢x ∋opLabel)
+    ...   | yes ∋opLabel = yes (S opLabel≢x ∋opLabel)
     ...   | no ¬∋opLabel = no (λ{ Z → opLabel≢x refl
-                                ; (Sₑₗ _ ∋opLabel) → ¬∋opLabel ∋opLabel})
+                                ; (S _ ∋opLabel) → ¬∋opLabel ∋opLabel})
 
     contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋-oL oL)
     contains ∅ oL = no λ()
     contains (Δ , oL') oL with oL ≟ oL'
     ... | yes refl = yes Z
     ... | no ¬Z with contains Δ oL
-    ...   | yes ∋oL = yes (Sₑₗ ¬Z ∋oL)
+    ...   | yes ∋oL = yes (S ¬Z ∋oL)
     ...   | no ¬S = no (λ{ Z → ¬Z refl
-                        ; (Sₑₗ _ ∋oL) → ¬S ∋oL}) 
+                        ; (S _ ∋oL) → ¬S ∋oL}) 
 
     _⊆_ : OpLabels → OpLabels → Set
     Δ ⊆ Δ' = ∀ (s : String) → Δ ∋-oL s → Δ' ∋-oL s
