@@ -10,7 +10,7 @@ open import effect.Util
 open import effect.Type
 open import effect.Context
 
-module effect.Lang where
+module effect.Term where
 
     infix 3 _⨟_⊢v_
     infix 3 _⨟_⊢c_
