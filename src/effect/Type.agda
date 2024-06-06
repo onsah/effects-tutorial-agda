@@ -6,7 +6,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 module effect.Type where
     
     infix  4 _∋ₑₗ_
-    infixl 5 _,ₑₗ_
+    infixl 5 _,_
     infix 6 _!_
     infixr 5 _—→_
     infix 5 _⟹_
@@ -31,7 +31,7 @@ module effect.Type where
 
     data OpLabels where
         ∅ : OpLabels
-        _,ₑₗ_ : OpLabels → String → OpLabels
+        _,_ : OpLabels → String → OpLabels
 
     _≟-v_ : (A : ValueType)
         → (B : ValueType)
@@ -105,9 +105,9 @@ module effect.Type where
     ... | yes refl  | yes refl  = yes refl
 
     ∅ ≟-Δ ∅ = yes refl
-    ∅ ≟-Δ (Δ₂ ,ₑₗ x) = no (λ())
-    (Δ₁ ,ₑₗ x) ≟-Δ ∅ = no (λ())
-    (Δ₁ ,ₑₗ x₁) ≟-Δ (Δ₂ ,ₑₗ x₂)  with x₁ ≟ x₂ 
+    ∅ ≟-Δ (Δ₂ , x) = no (λ())
+    (Δ₁ , x) ≟-Δ ∅ = no (λ())
+    (Δ₁ , x₁) ≟-Δ (Δ₂ , x₂)  with x₁ ≟ x₂ 
     ... | no x₁≢x₂ = no λ { refl → x₁≢x₂ refl}
     ... | yes refl with Δ₁ ≟-Δ Δ₂
     ...   | no Δ₁≢Δ₂ = no λ { refl → Δ₁≢Δ₂ refl}
@@ -116,13 +116,13 @@ module effect.Type where
     data _∋ₑₗ_ : OpLabels → String → Set 
         where
         Zₑₗ : {Δ : OpLabels} {oL : String}
-            → Δ ,ₑₗ oL ∋ₑₗ oL
+            → Δ , oL ∋ₑₗ oL
     
         Sₑₗ  : {Δ : OpLabels}
                 {oL oL' : String}
                 → ¬ (oL ≡ oL')
                 → Δ ∋ₑₗ oL
-                → Δ ,ₑₗ oL' ∋ₑₗ oL
+                → Δ , oL' ∋ₑₗ oL
 
     -- This is used for proof by reflection
     -- So that we can just specify the label of the effect and the proof is found automatically
@@ -130,7 +130,7 @@ module effect.Type where
             → (opLabel : String)
             → Dec (Δ ∋ₑₗ opLabel)
     ∅ ∋ₑₗ? opLabel = no (λ())
-    (Δ ,ₑₗ x) ∋ₑₗ? opLabel with opLabel ≟ x
+    (Δ , x) ∋ₑₗ? opLabel with opLabel ≟ x
     ... | yes refl = yes Zₑₗ
     ... | no opLabel≢x with Δ ∋ₑₗ? opLabel
     ...   | yes ∋opLabel = yes (Sₑₗ opLabel≢x ∋opLabel)
@@ -139,7 +139,7 @@ module effect.Type where
 
     contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋ₑₗ oL)
     contains ∅ oL = no λ()
-    contains (Δ ,ₑₗ oL') oL with oL ≟ oL'
+    contains (Δ , oL') oL with oL ≟ oL'
     ... | yes refl = yes Zₑₗ
     ... | no ¬Z with contains Δ oL
     ...   | yes ∋oL = yes (Sₑₗ ¬Z ∋oL)
@@ -151,9 +151,9 @@ module effect.Type where
 
     _\'_ : OpLabels → OpLabels → OpLabels
     ∅ \' Δ' = ∅
-    (Δ ,ₑₗ x) \' Δ' with contains Δ' x
+    (Δ , x) \' Δ' with contains Δ' x
     ... | yes _ = Δ \' Δ'
-    ... | no _ = (Δ \' Δ') ,ₑₗ x
+    ... | no _ = (Δ \' Δ') , x
 
     -- TODO: Convert it to record
     data Operation : String → ValueType → ValueType → Set

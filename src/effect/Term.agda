@@ -47,7 +47,7 @@ module effect.Term where
         → HandlerContext Σ Γ B Δ 
         → OpLabels
     ops ∅ = ∅
-    ops (_,[_⇒_] {label = label} Υ _ _) = (ops Υ) ,ₑₗ label
+    ops (_,[_⇒_] {label = label} Υ _ _) = (ops Υ) , label
 
     -- Value terms
     data _⨟_⊢v_ Σ Γ where
@@ -149,7 +149,7 @@ module effect.Term where
                   → (ops handler) ≡ (ops (rename-effects ρ handler))
     ops-≡-rename ρ ∅ = refl
     ops-≡-rename ρ (handler ,[ op ⇒ x ]) with (ops-≡-rename ρ handler) 
-    ... | handler-≡ = cong (_,ₑₗ _) handler-≡
+    ... | handler-≡ = cong (_, _) handler-≡
 
     renameᵥ ρ (` ∋x) = ` (ρ ∋x)
     renameᵥ ρ `true = `true
