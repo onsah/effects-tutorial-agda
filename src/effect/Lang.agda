@@ -3,7 +3,6 @@
 open import Agda.Builtin.String using (String)
 open import Agda.Builtin.Maybe using (Maybe)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; subst)
-open import Data.Vec using (Vec; []; _∷_; lookup)
 open import Data.Nat using (ℕ)
 open import Data.Fin using (Fin)
 open import Data.Bool using (Bool)
@@ -30,7 +29,7 @@ module effect.Lang where
       infix  4 _∋ₑₗ_
       infixl 5 _,ₑₗ_
       infix 6 _!_
-      infix 5 _—→_
+      infixr 5 _—→_
       infix 5 _⟹_
       infix 5 _⦂_—→_
 
@@ -173,12 +172,6 @@ module effect.Lang where
 
         _⊆_ : OpLabelContext → OpLabelContext → Set
         Δ ⊆ Δ' = ∀ (s : String) → Δ ∋ₑₗ s → Δ' ∋ₑₗ s
-
-        fromVec : {n : ℕ}
-                → Vec String n
-                → OpLabelContext
-        fromVec [] = ∅ₑₗ
-        fromVec (oL ∷ oLs) = (fromVec oLs) ,ₑₗ oL
 
         _\'_ : OpLabelContext → OpLabelContext → OpLabelContext
         ∅ₑₗ \' Δ' = ∅ₑₗ
@@ -473,5 +466,33 @@ module effect.Lang where
                 → Σ ⨟ ∅ ⊢v A —→ B ! Δ
       opCall[_] op {∋ₑₗ?opLabel} {∋ₑ?op} =
         `fun (`op_[_]⇒_ op {∋ₑₗ?opLabel} {∋ₑ?op} (` Z) (`return (` Z)))
-                
+
+      open import Data.Nat using (_<_; _≤?_; zero; suc; s≤s)
+      open import Relation.Nullary.Decidable using (toWitness)
+
+      private
+        length  : Context → ℕ
+        length ∅ = zero
+        length (Γ , _) = suc (length Γ)
+
+        lookup  : {Γ : Context} → {n : ℕ}
+                → (p : n < length Γ)
+                → ValueType
+        lookup {Γ = _ , A} {n = zero} _ = A
+        lookup {Γ = _ , _} {n = suc _} (s≤s p) = (lookup p)
+
+        count   : {Γ : Context} → {n : ℕ}
+                → (p : n < length Γ)
+                → Γ ∋ lookup p
+        count {Γ = _ , _} {n = zero } _ = Z
+        count {Γ = _ , _} {n = suc _} (s≤s p) = S (count p)
+
+      
+      #_ : ∀ {Γ : Context} {Σ : OpContext}
+        → (n : ℕ)
+        → {n∈Γ : True (suc n ≤? length Γ)}
+          --------------------------------
+        → Σ ⨟ Γ ⊢v lookup (toWitness n∈Γ)
+      #_ _ {n∈Γ = n∈Γ}  = ` (count (toWitness n∈Γ))
+                  
     open SyntaxSugar    
