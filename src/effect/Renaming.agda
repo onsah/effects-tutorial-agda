@@ -5,27 +5,27 @@ open import effect.Context
 open import effect.Term
 open import effect.Type
 
-module effect.Rename where
-   Rename : Context → Context → Set
-   Rename Γ Δ = ∀ {A} → Γ ∋ A → Δ ∋ A
+module effect.Renaming where
+   Renaming : Context → Context → Set
+   Renaming Γ Δ = ∀ {A} → Γ ∋ A → Δ ∋ A
 
    private
       ext : {Γ Δ : Context}
-          → Rename Γ Δ
-          → ∀ {B} → Rename (Γ , B) (Δ , B)
+          → Renaming Γ Δ
+          → ∀ {B} → Renaming (Γ , B) (Δ , B)
       ext ρ Z = Z
       ext ρ (S x) = S (ρ x)
 
    renameᵥ  : {Σ : OpContext} {Γ Δ : Context}
-            → Rename Γ Δ
+            → Renaming Γ Δ
             → ∀ {A} → Σ ⨟ Γ ⊢v A → Σ ⨟ Δ ⊢v A
 
    renameₑ  : {Σ : OpContext} {Γ Δ : Context}
-            → Rename Γ Δ
+            → Renaming Γ Δ
             → ∀ {A} → Σ ⨟ Γ ⊢c A → Σ ⨟ Δ ⊢c A
 
    rename-ops  : {Σ : OpContext} {Γ Γ' : Context}
-               → Rename Γ Γ'
+               → Renaming Γ Γ'
                → {B : ValueType} {Δ : OpLabels}
                → OpHandlers Σ Γ B Δ
                → OpHandlers Σ Γ' B Δ
@@ -37,7 +37,7 @@ module effect.Rename where
       -- ops under rename doesn't change
       ops-≡-rename  : {Σ : OpContext} {Γ Γ' : Context}
                       {B : ValueType} {Δ : OpLabels}
-                    → (ρ : Rename Γ Γ')
+                    → (ρ : Renaming Γ Γ')
                     → (handler  : OpHandlers Σ Γ B Δ)
                     → (opLabels handler) ≡ (opLabels (rename-ops ρ handler))
       ops-≡-rename ρ ∅ = refl
@@ -63,8 +63,8 @@ module effect.Rename where
                   (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ ops) ⊆Δ')
     
    renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
-   renameₑ ρ (`op_[_]⇒_ op {∋-oL?opLabel} {∋ₑ?op} ⊢arg ⊢body) = 
-      `op_[_]⇒_ op {∋-oL?opLabel} {∋ₑ?op} 
+   renameₑ ρ (`perform op ∋-oL?opLabel ∋ₑ?op ⊢arg ⊢body) = 
+      `perform op ∋-oL?opLabel ∋ₑ?op 
         (renameᵥ ρ ⊢arg) 
         (renameₑ (ext ρ) ⊢body)
    renameₑ ρ (`do←— ⊢var `in ⊢body) = 

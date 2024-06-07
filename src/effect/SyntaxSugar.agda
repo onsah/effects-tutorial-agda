@@ -6,7 +6,7 @@ open import Data.Nat using (ℕ)
 open import effect.Type
 open import effect.Context
 open import effect.Term
-open import effect.Rename
+open import effect.Renaming
 
 module effect.SyntaxSugar where
 
@@ -20,7 +20,7 @@ module effect.SyntaxSugar where
               → {True (Σ ∋ₑ? op)}
               → Σ ⨟ Γ ⊢v A —→ B ! Δ
     opCall[_] op {∋?opLabel} {∋ₑ?op} =
-      `fun (`op_[_]⇒_ op {∋?opLabel} {∋ₑ?op} (` Z) (`return (` Z)))
+      `fun (`perform op ∋?opLabel ∋ₑ?op (` Z) (`return (` Z)))
 
     open import Data.Nat using (_<_; _≤?_; zero; suc; s≤s)
     open import Relation.Nullary.Decidable using (toWitness)
