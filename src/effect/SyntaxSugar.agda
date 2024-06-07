@@ -6,16 +6,19 @@ open import Data.Nat using (ℕ)
 open import effect.Type
 open import effect.Context
 open import effect.Term
+open import effect.Rename
 
 module effect.SyntaxSugar where
 
+    infixr  3 _⨟_
+
     opCall[_] : {A B : ValueType}
-                {Σ : OpContext} {Δ : OpLabels}
-                {opLabel : String}
+                {Σ : OpContext} {Γ : Context} 
+                {Δ : OpLabels} {opLabel : String}
               → (op : Operation opLabel A B)
               → {True (Δ ∋-oL? opLabel)}
               → {True (Σ ∋ₑ? op)}
-              → Σ ⨟ ∅ ⊢v A —→ B ! Δ
+              → Σ ⨟ Γ ⊢v A —→ B ! Δ
     opCall[_] op {∋?opLabel} {∋ₑ?op} =
       `fun (`op_[_]⇒_ op {∋?opLabel} {∋ₑ?op} (` Z) (`return (` Z)))
 
@@ -40,9 +43,19 @@ module effect.SyntaxSugar where
       count {Γ = _ , _} {n = suc _} (s≤s p) = S (count p)
 
     
-    #_ : ∀ {Γ : Context} {Σ : OpContext}
-      → (n : ℕ)
-      → {n∈Γ : True (suc n ≤? length Γ)}
-        --------------------------------
-      → Σ ⨟ Γ ⊢v lookup (toWitness n∈Γ)
-    #_ _ {n∈Γ = n∈Γ}  = ` (count (toWitness n∈Γ))
+    #_  : {Γ : Context} {Σ : OpContext}
+        → (n : ℕ)
+        → {n∈Γ : True (suc n ≤? length Γ)}
+          --------------------------------
+        → Σ ⨟ Γ ⊢v lookup (toWitness n∈Γ)
+    #_  _ {n∈Γ = n∈Γ}  = ` (count (toWitness n∈Γ))
+
+    -- Sequencing
+    _⨟_ : {Γ : Context} {Σ : OpContext}
+          {A B : ValueType} {Δ : OpLabels}
+        → Σ ⨟ Γ ⊢c A ! Δ
+        → Σ ⨟ Γ ⊢c B ! Δ
+        -- Hmm: Should combine opLabels from both terms?
+        → Σ ⨟ Γ ⊢c B ! Δ
+    ⊢A ⨟ ⊢B = `do←— ⊢A 
+              `in weakenₑ  ⊢B
