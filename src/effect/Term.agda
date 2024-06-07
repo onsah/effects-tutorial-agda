@@ -21,33 +21,34 @@ module effect.Term where
     -- Hmm: Maybe we should also have OpContext
     data _⨟_⊢c_ (Σ : OpContext) (Γ : Context) : ComputationType → Set
 
-    data HandlerContext (Σ : OpContext) (Γ : Context) 
+    data OpHandlers (Σ : OpContext) (Γ : Context) 
                         (B : ValueType)
                         (Δ : OpLabels) : Set 
       where
-      ∅       : HandlerContext Σ Γ B Δ
+      ∅       : OpHandlers Σ Γ B Δ
       _,[_⇒_] : {label : String} {Aᵢ Bᵢ : ValueType}
-              → HandlerContext Σ Γ B Δ
+              → OpHandlers Σ Γ B Δ
               → (op : Operation label Aᵢ Bᵢ)
               → {True (Σ ∋ₑ? op)}
               → Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ) ⊢c B ! Δ
-              → HandlerContext Σ Γ B Δ
+              → OpHandlers Σ Γ B Δ
 
     -- Asserts that every effect handler body is well typed according to it's effect
-    record Handlers  (Σ : OpContext) (Γ : Context) 
+    record Handler  (Σ : OpContext) (Γ : Context) 
                     (A B : ValueType) (Δ : OpLabels) : Set 
       where
       inductive
       field
         return  : Σ ⨟ Γ , A ⊢c B ! Δ
-        effects : HandlerContext Σ Γ B Δ
-
-    ops : {Σ : OpContext} {Γ : Context}
-          {B : ValueType} {Δ : OpLabels}
-        → HandlerContext Σ Γ B Δ 
-        → OpLabels
-    ops ∅ = ∅
-    ops (_,[_⇒_] {label = label} Υ _ _) = (ops Υ) , label
+        ops : OpHandlers Σ Γ B Δ
+    
+    private
+      opLabels  : {Σ : OpContext} {Γ : Context}
+                  {B : ValueType} {Δ : OpLabels}
+                → OpHandlers Σ Γ B Δ 
+                → OpLabels
+      opLabels  ∅ = ∅
+      opLabels  (_,[_⇒_] {label = label} Υ _ _) = (opLabels Υ) , label
 
     -- Value terms
     data _⨟_⊢v_ Σ Γ where
@@ -71,8 +72,8 @@ module effect.Term where
 
         `handler  : {Δ Δ' : OpLabels}
                     {A B : ValueType}
-                  → (handlers : Handlers Σ Γ A B Δ')
-                  → (Δ \' (ops (Handlers.effects handlers))) ⊆ Δ'
+                  → (handlers : Handler Σ Γ A B Δ')
+                  → (Δ \' (opLabels (Handler.ops handlers))) ⊆ Δ'
                   → Σ ⨟ Γ ⊢v A ! Δ ⟹ B ! Δ'
 
     data _⨟_⊢c_ Σ Γ where
@@ -118,11 +119,12 @@ module effect.Term where
     Rename : Context → Context → Set
     Rename Γ Δ = ∀ {A} → Γ ∋ A → Δ ∋ A
 
-    ext : {Γ Δ : Context}
-        → Rename Γ Δ
-        → ∀ {B} → Rename (Γ , B) (Δ , B)
-    ext ρ Z = Z
-    ext ρ (S x) = S (ρ x)
+    private
+      ext : {Γ Δ : Context}
+          → Rename Γ Δ
+          → ∀ {B} → Rename (Γ , B) (Δ , B)
+      ext ρ Z = Z
+      ext ρ (S x) = S (ρ x)
 
     renameᵥ  : {Σ : OpContext} {Γ Δ : Context}
             → Rename Γ Δ
@@ -132,24 +134,25 @@ module effect.Term where
             → Rename Γ Δ
             → ∀ {A} → Σ ⨟ Γ ⊢c A → Σ ⨟ Δ ⊢c A
 
-    rename-effects  : {Σ : OpContext} {Γ Γ' : Context}
+    rename-ops  : {Σ : OpContext} {Γ Γ' : Context}
                 → Rename Γ Γ'
                 → {B : ValueType} {Δ : OpLabels}
-                → HandlerContext Σ Γ B Δ
-                → HandlerContext Σ Γ' B Δ
-    rename-effects ρ ∅ = ∅
-    rename-effects ρ (_,[_⇒_] c op {∋op} handler) = 
-      _,[_⇒_] (rename-effects ρ c) op {∋op} (renameₑ (ext (ext ρ)) handler)
+                → OpHandlers Σ Γ B Δ
+                → OpHandlers Σ Γ' B Δ
+    rename-ops ρ ∅ = ∅
+    rename-ops ρ (_,[_⇒_] c op {∋op} handler) = 
+      _,[_⇒_] (rename-ops ρ c) op {∋op} (renameₑ (ext (ext ρ)) handler)
 
-    -- ops under rename doesn't change
-    ops-≡-rename  : {Σ : OpContext} {Γ Γ' : Context}
-                    {B : ValueType} {Δ : OpLabels}
-                  → (ρ : Rename Γ Γ')
-                  → (handler  : HandlerContext Σ Γ B Δ)
-                  → (ops handler) ≡ (ops (rename-effects ρ handler))
-    ops-≡-rename ρ ∅ = refl
-    ops-≡-rename ρ (handler ,[ op ⇒ x ]) with (ops-≡-rename ρ handler) 
-    ... | handler-≡ = cong (_, _) handler-≡
+    private
+      -- ops under rename doesn't change
+      ops-≡-rename  : {Σ : OpContext} {Γ Γ' : Context}
+                      {B : ValueType} {Δ : OpLabels}
+                    → (ρ : Rename Γ Γ')
+                    → (handler  : OpHandlers Σ Γ B Δ)
+                    → (opLabels handler) ≡ (opLabels (rename-ops ρ handler))
+      ops-≡-rename ρ ∅ = refl
+      ops-≡-rename ρ (handler ,[ op ⇒ x ]) with (ops-≡-rename ρ handler) 
+      ... | handler-≡ = cong (_, _) handler-≡
 
     renameᵥ ρ (` ∋x) = ` (ρ ∋x)
     renameᵥ ρ `true = `true
@@ -160,14 +163,14 @@ module effect.Term where
     renameᵥ ρ (`handler {Δ = Δ} {Δ' = Δ'}
                 record { 
                   return = return ; 
-                  effects = effects 
+                  ops = ops 
                 } 
                 ⊆Δ') = `handler {Δ = Δ}
                     (record { 
                       return = renameₑ (ext ρ) return ; 
-                      effects = rename-effects ρ effects
+                      ops = rename-ops ρ ops
                     }) 
-                    (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ effects) ⊆Δ')
+                    (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ ops) ⊆Δ')
     
     renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
     renameₑ ρ (`op_[_]⇒_ op {∋-oL?opLabel} {∋ₑ?op} ⊢arg ⊢body) = 
