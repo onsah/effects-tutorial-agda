@@ -87,20 +87,20 @@ module effect.Term where
                 → Σ ⨟ Γ ⊢c A ! Δ
 
         -- Op rule
-        `op_[_]⇒_ : {Δ : OpLabels} 
-                      {A Aₒₚ Bₒₚ : ValueType}
-                      {opLabel : String} 
-                    → (op : Operation opLabel Aₒₚ Bₒₚ)
-                    → {True (Δ ∋-oL? opLabel)}
-                    → {True (Σ ∋ₑ? op)}
-                    → Σ ⨟ Γ ⊢v Aₒₚ
-                    → Σ ⨟ Γ , Bₒₚ ⊢c A ! Δ
-                    → Σ ⨟ Γ ⊢c A ! Δ
+        `perform  : {Δ : OpLabels} 
+                    {A Aₒₚ Bₒₚ : ValueType}
+                    {opLabel : String} 
+                  → (op : Operation opLabel Aₒₚ Bₒₚ)
+                  → (∋?opLabel : True (Δ ∋-oL? opLabel))
+                  → (∋?op : True (Σ ∋ₑ? op))
+                  → (⊢arg : Σ ⨟ Γ ⊢v Aₒₚ)
+                  → (⊢body : Σ ⨟ Γ , Bₒₚ ⊢c A ! Δ)
+                  → Σ ⨟ Γ ⊢c A ! Δ
 
         `do←—_`in_  : {Δ : OpLabels} 
                       {A B : ValueType}
-                    → Σ ⨟ Γ ⊢c A ! Δ
-                    → Σ ⨟ Γ , A ⊢c B ! Δ
+                    → (⊢exp : Σ ⨟ Γ ⊢c A ! Δ)
+                    → (⊢body : Σ ⨟ Γ , A ⊢c B ! Δ)
                     → Σ ⨟ Γ ⊢c B ! Δ
 
         _`·_ : {A : ValueType} {Aₑ : ComputationType}
