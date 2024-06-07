@@ -126,8 +126,7 @@ module effect.Type where
 
     -- This is used for proof by reflection
     -- So that we can just specify the label of the effect and the proof is found automatically
-    _∋-oL?_  : (Δ : OpLabels)
-            → (opLabel : String)
+    _∋-oL?_ : (Δ : OpLabels) → (opLabel : String)
             → Dec (Δ ∋-oL opLabel)
     ∅ ∋-oL? opLabel = no (λ())
     (Δ , x) ∋-oL? opLabel with opLabel ≟ x
@@ -136,15 +135,15 @@ module effect.Type where
     ...   | yes ∋opLabel = yes (S-oL opLabel≢x ∋opLabel)
     ...   | no ¬∋opLabel = no (λ{ Z-oL → opLabel≢x refl
                                 ; (S-oL _ ∋opLabel) → ¬∋opLabel ∋opLabel})
-
-    contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋-oL oL)
-    contains ∅ oL = no λ()
-    contains (Δ , oL') oL with oL ≟ oL'
-    ... | yes refl = yes Z-oL
-    ... | no ¬Z with contains Δ oL
-    ...   | yes ∋oL = yes (S-oL ¬Z ∋oL)
-    ...   | no ¬S = no (λ{ Z-oL → ¬Z refl
-                        ; (S-oL _ ∋oL) → ¬S ∋oL}) 
+    private
+        contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋-oL oL)
+        contains ∅ oL = no λ()
+        contains (Δ , oL') oL with oL ≟ oL'
+        ... | yes refl = yes Z-oL
+        ... | no ¬Z with contains Δ oL
+        ...   | yes ∋oL = yes (S-oL ¬Z ∋oL)
+        ...   | no ¬S = no (λ{ Z-oL → ¬Z refl
+                            ; (S-oL _ ∋oL) → ¬S ∋oL}) 
 
     _⊆_ : OpLabels → OpLabels → Set
     Δ ⊆ Δ' = ∀ (s : String) → Δ ∋-oL s → Δ' ∋-oL s
@@ -155,16 +154,16 @@ module effect.Type where
     ... | yes _ = Δ \' Δ'
     ... | no _ = (Δ \' Δ') , x
 
-    -- TODO: Convert it to record
     data Operation : String → ValueType → ValueType → Set
 
     data Operation where
         _⦂_—→_  : (label : String) → (A : ValueType) → (B : ValueType) 
                 → Operation label A B
 
-    label : ∀ {label A B}
-            → Operation label A B → String
-    label (label ⦂ _ —→ _) = label
+    private
+        label : ∀ {label A B}
+                → Operation label A B → String
+        label (label ⦂ _ —→ _) = label
 
     _≟-op_  : ∀ {label A B}
             → (op : Operation label A B)
