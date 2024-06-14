@@ -22,17 +22,25 @@ module effect.Term where
     -- Hmm: Maybe we should also have OpContext
     data _⨟_⊢c_ (Σ : OpContext) (Γ : Context) : ComputationType → Set
 
+    OpHandler : (Σ : OpContext) (Γ : Context)
+              → (Aᵢ : ValueType)
+              → (Bᵢ : ValueType)
+              → (B : ValueType)
+              → (Δ : OpLabels)
+              → Set
+    OpHandler  Σ Γ Aᵢ Bᵢ B Δ = Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ) ⊢c B ! Δ 
+
     data OpHandlers (Σ : OpContext) (Γ : Context) 
                         (B : ValueType)
                         (Δ : OpLabels) : Set 
       where
       ∅       : OpHandlers Σ Γ B Δ
       -- TODO: drop brackets
-      _,[_⇒_] : {label : String} {Aᵢ Bᵢ : ValueType}
+      _∷[_,_⇒_] : {label : String} {Aᵢ Bᵢ : ValueType}
               → OpHandlers Σ Γ B Δ
               → (op : Operation label Aᵢ Bᵢ)
-              → {True (Σ ∋ₑ? op)}
-              → Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ) ⊢c B ! Δ
+              → (Σ ∋ₑ op)
+              → OpHandler Σ Γ Aᵢ Bᵢ B Δ
               → OpHandlers Σ Γ B Δ
     
     opLabels  : {Σ : OpContext} {Γ : Context}
@@ -40,7 +48,7 @@ module effect.Term where
               → OpHandlers Σ Γ B Δ 
               → OpLabels
     opLabels  ∅ = ∅
-    opLabels  (_,[_⇒_] {label = label} Υ _ _) = (opLabels Υ) , label
+    opLabels  (_∷[_,_⇒_] {label = label} Υ _ _ _) = (opLabels Υ) , label
 
     -- Asserts that every effect handler body is well typed according to it's effect
     record Handler  (Σ : OpContext) (Γ : Context) 
@@ -119,3 +127,4 @@ module effect.Term where
                       → Σ ⨟ Γ ⊢v A ! Δ' ⟹ B ! Δ
                       → Σ ⨟ Γ ⊢c A ! Δ' 
                       → Σ ⨟ Γ ⊢c B ! Δ
+  

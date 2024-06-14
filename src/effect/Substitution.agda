@@ -37,8 +37,8 @@ module effect.Substitution where
                → OpHandlers Σ Γ B Δ
                → OpHandlers Σ Γ' B Δ
    subst-ops   σ ∅ = ∅
-   subst-ops   σ (_,[_⇒_] handlers op {∋op} ⊢handler) = 
-      _,[_⇒_] (subst-ops σ handlers) op {∋op} (subst-c (ext-subst (ext-subst σ)) ⊢handler)
+   subst-ops   σ (handlers ∷[ op , ∋op ⇒ ⊢handler ]) = 
+      (subst-ops σ handlers) ∷[ op , ∋op ⇒ (subst-c (ext-subst (ext-subst σ)) ⊢handler) ]
 
    subst-c σ (`return ⊢A) = `return (subst-v σ ⊢A)
    subst-c σ (`perform op ∋?opLabel ∋?op ⊢arg ⊢body) = 
@@ -59,7 +59,7 @@ module effect.Substitution where
                   → (handler  : OpHandlers Σ Γ B Δ)
                   → (opLabels handler) ≡ (opLabels (subst-ops σ handler))
       ops-≡-subst σ ∅ = refl
-      ops-≡-subst σ (handlers ,[ op ⇒ ⊢handler ]) with (ops-≡-subst σ handlers) 
+      ops-≡-subst σ (handlers ∷[ op , _ ⇒ ⊢handler ]) with (ops-≡-subst σ handlers) 
       ... | handlers-≡ = cong (_, _) handlers-≡
 
    subst-v σ (` x) = σ x
