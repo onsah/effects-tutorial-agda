@@ -14,7 +14,7 @@ module effect.Term where
     infix 3 _⨟_⊢v_
     infix 3 _⨟_⊢c_
     infix 5 _`·_
-    infix 4 _∷_
+    infixl 5 _∷_
     infix 10 [_,_]↦_
 
     -- Thought it's appropriate to have effect context as a parameterized type since it's not supposed to change.
@@ -31,7 +31,7 @@ module effect.Term where
       [_,_]↦_  : {label : String}
               → (op : Operation label Aᵢ Bᵢ)
               → (Σ ∋ₑ op)
-              → Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ) ⊢c B ! Δ
+              → Σ ⨟ Γ ∷ Aᵢ ∷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
               → OpClause Σ Γ Aᵢ Bᵢ B Δ
 
     data OpClauses  (Σ : OpContext) (Γ : Context) 
@@ -58,13 +58,8 @@ module effect.Term where
       inductive
       constructor handler[_,_]
       field
-        return  : Σ ⨟ Γ , A ⊢c B ! Δ
+        return  : Σ ⨟ Γ ∷ A ⊢c B ! Δ
         ops : OpClauses Σ Γ B Δ
-
-      
-
-      -- TODO: create a constructor
-      -- constructor ∥[return_,_] 
 
     -- Value terms
     data _⨟_⊢v_ Σ Γ where
@@ -83,7 +78,7 @@ module effect.Term where
             → Σ ⨟ Γ ⊢v str
 
         `fun : {A B : ValueType} {Δ : OpLabels}
-             → Σ ⨟ (Γ , A) ⊢c B ! Δ
+             → Σ ⨟ (Γ ∷ A) ⊢c B ! Δ
              → Σ ⨟ Γ ⊢v A —→ B ! Δ
 
         `handler  : {Δ Δ' : OpLabels}
@@ -106,13 +101,13 @@ module effect.Term where
                   → (∋?opLabel : True (Δ ∋-oL? opLabel))
                   → (∋?op : True (Σ ∋ₑ? op))
                   → (⊢arg : Σ ⨟ Γ ⊢v Aₒₚ)
-                  → (⊢body : Σ ⨟ Γ , Bₒₚ ⊢c A ! Δ)
+                  → (⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ)
                   → Σ ⨟ Γ ⊢c A ! Δ
 
         `do←—_`in_  : {Δ : OpLabels} 
                       {A B : ValueType}
                     → (⊢exp : Σ ⨟ Γ ⊢c A ! Δ)
-                    → (⊢body : Σ ⨟ Γ , A ⊢c B ! Δ)
+                    → (⊢body : Σ ⨟ Γ ∷ A ⊢c B ! Δ)
                     → Σ ⨟ Γ ⊢c B ! Δ
 
         _`·_ : {A : ValueType} {Aₑ : ComputationType}

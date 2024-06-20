@@ -12,7 +12,7 @@ module effect.Renaming where
    private
       ext : {Γ Δ : Context}
           → Renaming Γ Δ
-          → ∀ {B} → Renaming (Γ , B) (Δ , B)
+          → ∀ {B} → Renaming (Γ ∷ B) (Δ ∷ B)
       ext ρ Z = Z
       ext ρ (S x) = S (ρ x)
 
@@ -71,11 +71,11 @@ module effect.Renaming where
    weakenᵥ  :  {Σ : OpContext}
                {Γ : Context} {A B : ValueType}
             →  Σ ⨟ Γ ⊢v A
-            →  Σ ⨟ Γ , B ⊢v A
+            →  Σ ⨟ Γ ∷ B ⊢v A
    weakenₑ  :  {Σ : OpContext} {Δ : OpLabels}
                {Γ : Context} {A B : ValueType}
             →  Σ ⨟ Γ ⊢c A ! Δ
-            →  Σ ⨟ Γ , B ⊢c A ! Δ
+            →  Σ ⨟ Γ ∷ B ⊢c A ! Δ
 
    weakenᵥ ⊢v = renameᵥ (S_) ⊢v
 
