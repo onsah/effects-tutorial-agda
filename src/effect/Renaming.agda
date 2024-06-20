@@ -44,7 +44,7 @@ module effect.Renaming where
       ops-≡-rename ρ ∅ = refl
       ops-≡-rename ρ (handler ∷ [ label ⦂ _ —→ _ , _ ]↦ _) with (ops-≡-rename ρ handler) 
       ... | handler-≡ =
-         cong (λ labels → labels , label) handler-≡
+         cong (_∷ label) handler-≡
 
    renameᵥ ρ (` ∋x) = ` (ρ ∋x)
    renameᵥ ρ `true = `true

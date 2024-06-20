@@ -49,7 +49,7 @@ module effect.Term where
               → OpClauses Σ Γ B Δ 
               → OpLabels
     opLabels  ∅ = ∅
-    opLabels (Y ∷ [ label ⦂ _ —→ _ , _ ]↦ _) = (opLabels Y) , label
+    opLabels (Y ∷ [ label ⦂ _ —→ _ , _ ]↦ _) = (opLabels Y) ∷ label
 
     -- Asserts that every effect handler body is well typed according to it's effect
     record Handler  (Σ : OpContext) (Γ : Context) 

@@ -60,7 +60,7 @@ module effect.Substitution where
                   → (opLabels handler) ≡ (opLabels (subst-ops σ handler))
       ops-≡-subst σ ∅ = refl
       ops-≡-subst σ (handlers ∷ [ label ⦂ _ —→ _ , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
-      ... | handlers-≡ = cong (_, label) handlers-≡
+      ... | handlers-≡ = cong (_∷ label) handlers-≡
 
    subst-v σ (` x) = σ x
    subst-v _ `true = `true
