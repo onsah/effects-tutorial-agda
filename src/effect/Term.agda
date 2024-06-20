@@ -56,9 +56,12 @@ module effect.Term where
                     (A B : ValueType) (Δ : OpLabels) : Set 
       where
       inductive
+      constructor handler[_,_]
       field
         return  : Σ ⨟ Γ , A ⊢c B ! Δ
         ops : OpClauses Σ Γ B Δ
+
+      
 
       -- TODO: create a constructor
       -- constructor ∥[return_,_] 

@@ -68,16 +68,7 @@ module effect.Substitution where
    subst-v _ `unit = `unit
    subst-v _ (`s x) = `s x
    subst-v σ (`fun ⊢body) = `fun (subst-c (ext-subst σ) ⊢body)
-   subst-v σ (`handler  {Δ = Δ} {Δ' = Δ'}
-                  record { 
-                     return = return ; 
-                     ops = ops 
-                  } 
-                  Δ\ops⊆Δ'
-               ) = `handler 
-                        (record { 
-                           return = subst-c (ext-subst σ) return ; 
-                           ops = subst-ops σ ops }
-                        ) 
-                        (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-subst σ ops) Δ\ops⊆Δ')
+   subst-v σ (`handler  {Δ = Δ} {Δ' = Δ'} handler[ return , ops ] Δ\ops⊆Δ') 
+      = `handler handler[ subst-c (ext-subst σ) return , subst-ops σ ops ]
+            (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-subst σ ops) Δ\ops⊆Δ')
      

@@ -50,17 +50,10 @@ module effect.Renaming where
    renameᵥ ρ `unit = `unit
    renameᵥ ρ (`s s) = `s s
    renameᵥ ρ (`fun ⊢body) = `fun (renameₑ (ext ρ) ⊢body)
-   renameᵥ ρ (`handler {Δ = Δ} {Δ' = Δ'}
-               record { 
-                  return = return ; 
-                  ops = ops 
-               } 
-               ⊆Δ') = `handler {Δ = Δ}
-                  (record { 
-                     return = renameₑ (ext ρ) return ; 
-                     ops = rename-ops ρ ops
-                  }) 
-                  (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ ops) ⊆Δ')
+   renameᵥ ρ (`handler {Δ = Δ} {Δ' = Δ'} handler[ return , ops ] ⊆Δ') 
+      = `handler {Δ = Δ} 
+            handler[ renameₑ (ext ρ) return , rename-ops ρ ops ]
+            (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ ops) ⊆Δ')
     
    renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
    renameₑ ρ (`perform op ∋-oL?opLabel ∋ₑ?op ⊢arg ⊢body) = 
