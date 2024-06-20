@@ -30,10 +30,11 @@ module effect.Renaming where
                → OpClauses Σ Γ B Δ
                → OpClauses Σ Γ' B Δ
    rename-ops ρ ∅ = ∅
-   rename-ops ρ (c ∷ [ op , ∋op ]↦ handler) = 
-      (rename-ops ρ c) ∷ [ op , ∋op ]↦ (renameₑ (ext (ext ρ)) handler)
+   rename-ops ρ (opClauses ∷ ([ op , ∋op ]↦ handler)) = 
+      (rename-ops ρ opClauses) ∷ [ op , ∋op ]↦ (renameₑ (ext (ext ρ)) handler)
 
    private
+
       -- ops under rename doesn't change
       ops-≡-rename  : {Σ : OpContext} {Γ Γ' : Context}
                       {B : ValueType} {Δ : OpLabels}
@@ -41,8 +42,9 @@ module effect.Renaming where
                     → (handler  : OpClauses Σ Γ B Δ)
                     → (opLabels handler) ≡ (opLabels (rename-ops ρ handler))
       ops-≡-rename ρ ∅ = refl
-      ops-≡-rename ρ (handler ∷ [ op , _ ]↦ _) with (ops-≡-rename ρ handler) 
-      ... | handler-≡ = cong (_, _) handler-≡
+      ops-≡-rename ρ (handler ∷ [ label ⦂ _ —→ _ , _ ]↦ _) with (ops-≡-rename ρ handler) 
+      ... | handler-≡ =
+         cong (λ labels → labels , label) handler-≡
 
    renameᵥ ρ (` ∋x) = ` (ρ ∋x)
    renameᵥ ρ `true = `true
@@ -81,3 +83,4 @@ module effect.Renaming where
 
    weakenₑ ⊢c = renameₑ (S_) ⊢c
   
+ 

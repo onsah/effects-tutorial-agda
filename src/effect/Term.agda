@@ -39,7 +39,7 @@ module effect.Term where
                     (Δ : OpLabels) 
                   : Set where
       ∅       : OpClauses Σ Γ B Δ
-      _∷_ : {label : String} {Aᵢ Bᵢ : ValueType}
+      _∷_     : {Aᵢ Bᵢ : ValueType}
               → OpClauses Σ Γ B Δ
               → OpClause Σ Γ Aᵢ Bᵢ B Δ
               → OpClauses Σ Γ B Δ
@@ -49,7 +49,7 @@ module effect.Term where
               → OpClauses Σ Γ B Δ 
               → OpLabels
     opLabels  ∅ = ∅
-    opLabels  (_∷_ {label = label} Υ _) = (opLabels Υ) , label
+    opLabels (Y ∷ [ label ⦂ _ —→ _ , _ ]↦ _) = (opLabels Y) , label
 
     -- Asserts that every effect handler body is well typed according to it's effect
     record Handler  (Σ : OpContext) (Γ : Context) 

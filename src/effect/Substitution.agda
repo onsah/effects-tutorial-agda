@@ -59,8 +59,8 @@ module effect.Substitution where
                   → (handler  : OpClauses Σ Γ B Δ)
                   → (opLabels handler) ≡ (opLabels (subst-ops σ handler))
       ops-≡-subst σ ∅ = refl
-      ops-≡-subst σ (handlers ∷ [ op , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
-      ... | handlers-≡ = cong (_, _) handlers-≡
+      ops-≡-subst σ (handlers ∷ [ label ⦂ _ —→ _ , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
+      ... | handlers-≡ = cong (_, label) handlers-≡
 
    subst-v σ (` x) = σ x
    subst-v _ `true = `true
