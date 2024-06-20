@@ -58,8 +58,8 @@ module effect.Renaming where
             (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ ops) ⊆Δ')
     
    renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
-   renameₑ ρ (`perform op ∋-oL?opLabel ∋ₑ?op ⊢arg ⊢body) = 
-      `perform op ∋-oL?opLabel ∋ₑ?op 
+   renameₑ ρ (`perform op ∋-oLopLabel ∋ₑop ⊢arg ⊢body) = 
+      `perform op ∋-oLopLabel ∋ₑop 
         (renameᵥ ρ ⊢arg) 
         (renameₑ (ext ρ) ⊢body)
    renameₑ ρ (`do←— ⊢var `in ⊢body) = 

@@ -36,7 +36,26 @@ module effect.Reduction where
       σ Z = ⊢V2
       σ (S Z) = ⊢V1
       σ (S (S ∋A)) = ` ∋A
-   
+
+   data _∋-opClauses_ :  
+        {Σ : OpContext} {Γ : Context}
+        {Aᵢ Bᵢ B : ValueType} {Δ : OpLabels}
+      → OpClauses Σ Γ B Δ
+      → OpClause Σ Γ Aᵢ Bᵢ B Δ 
+      → Set where
+      
+      Z  : {Σ : OpContext} {Γ : Context}
+           {Aᵢ Bᵢ B : ValueType} {Δ : OpLabels}
+         → {opClauses : OpClauses Σ Γ B Δ}
+         → {opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ}
+         → (opClauses ∷ opClause) ∋-opClauses opClause
+
+      S_ : {Σ : OpContext} {Γ : Context}
+           {Aᵢ Bᵢ B : ValueType} {Δ : OpLabels}
+         → {opClauses : OpClauses Σ Γ B Δ}
+         → {opClause opClause' : OpClause Σ Γ Aᵢ Bᵢ B Δ}
+         → opClauses ∋-opClauses opClause
+         → (opClauses ∷ opClause') ∋-opClauses opClause  
 
    data _↝_ :  {Σ : OpContext} {Γ : Context}
                {A B : ValueType} {Δ Δ' : OpLabels}
@@ -60,17 +79,17 @@ module effect.Reduction where
       β-do-op     :  {Σ : OpContext} {Γ : Context}
                      {A B C D : ValueType} {Δ : OpLabels}
                      {opLabel : String} {op : Operation opLabel A B}
-                     {∋?opLabel : True (Δ ∋-oL? opLabel)}
-                     {∋?op : True (Σ ∋ₑ? op)}
+                     {∋opLabel : Δ ∋-oL opLabel}
+                     {∋op : Σ ∋ₑ op}
                   →  (⊢perform-arg : Σ ⨟ Γ ⊢v A)
                   →  (⊢perform-body : Σ ⨟ Γ ∷ B ⊢c C ! Δ)
                   →  (⊢do-body : Σ ⨟ Γ ∷ C ⊢c D ! Δ)
-                  →  (`do←— (`perform op ∋?opLabel ∋?op 
+                  →  (`do←— (`perform op ∋opLabel ∋op 
                               ⊢perform-arg ⊢perform-body) 
                      `in
                         ⊢do-body)
                      ↝ 
-                     (`perform op ∋?opLabel ∋?op 
+                     (`perform op ∋opLabel ∋op 
                         ⊢perform-arg 
                         (`do←— ⊢perform-body `in renameₑ (λ{ Z → Z
                                                          ; (S ∋A) → S (S ∋A)}) ⊢do-body))

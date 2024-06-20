@@ -41,8 +41,8 @@ module effect.Substitution where
       (subst-ops σ handlers) ∷ [ op , ∋op ]↦ (subst-c (ext-subst (ext-subst σ)) ⊢handler)
 
    subst-c σ (`return ⊢A) = `return (subst-v σ ⊢A)
-   subst-c σ (`perform op ∋?opLabel ∋?op ⊢arg ⊢body) = 
-      `perform op ∋?opLabel ∋?op (subst-v σ ⊢arg) (subst-c (ext-subst σ) ⊢body)
+   subst-c σ (`perform op ∋opLabel ∋op ⊢arg ⊢body) = 
+      `perform op ∋opLabel ∋op (subst-v σ ⊢arg) (subst-c (ext-subst σ) ⊢body)
    subst-c σ (`do←— ⊢exp `in ⊢body) = 
       `do←— (subst-c σ ⊢exp) `in (subst-c (ext-subst σ) ⊢body)
    subst-c σ (⊢fn `· ⊢arg) = (subst-v σ ⊢fn) `· (subst-v σ ⊢arg)

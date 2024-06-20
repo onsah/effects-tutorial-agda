@@ -1,6 +1,6 @@
 
 open import Data.String using (String)
-open import Relation.Nullary.Decidable using (True)
+open import Relation.Nullary.Decidable using (True; toWitness)
 open import Data.Nat using (ℕ)
 
 open import effect.Type
@@ -20,7 +20,7 @@ module effect.SyntaxSugar where
               → {True (Σ ∋ₑ? op)}
               → Σ ⨟ Γ ⊢v A —→ B ! Δ
     opCall[_] op {∋?opLabel} {∋ₑ?op} =
-      `fun (`perform op ∋?opLabel ∋ₑ?op (` Z) (`return (` Z)))
+      `fun (`perform op (toWitness ∋?opLabel) (toWitness ∋ₑ?op) (` Z) (`return (` Z)))
 
     open import Data.Nat using (_<_; _≤?_; zero; suc; s≤s)
     open import Relation.Nullary.Decidable using (toWitness)
