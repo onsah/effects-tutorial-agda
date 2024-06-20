@@ -15,7 +15,7 @@ module effect.Substitution where
    ext-subst   : {Σ : OpContext}
                  {Γ Γ' : Context} {A : ValueType}
                → Substitution Σ  Γ       Γ'
-               → Substitution Σ (Γ , A) (Γ' , A)
+               → Substitution Σ (Γ ∷ A) (Γ' ∷ A)
    ext-subst σ Z = ` Z
    ext-subst σ (S x) = renameᵥ S_ (σ x)
 
