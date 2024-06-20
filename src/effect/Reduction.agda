@@ -128,15 +128,28 @@ module effect.Reduction where
                         ↝
                         ((Handler.return handlers) [ ⊢v ] )
 
-      {- β-with-op-handle  :  {Σ : OpContext} {Γ : Context}
-                           {A B : ValueType} {Δ Δ' : OpLabels}
-                        →  {handlers : Handler Σ Γ A B Δ'}
-                        →  {⊆Δ : (Δ \' (opLabels (Handler.ops handlers))) ⊆ Δ'}
-                        →  {⊢v : Σ ⨟ Γ ⊢v A}      
-                        →  {op : ...}
-                        →  {handler : ...}
-                        →  ((Handler.ops handlers) ∋[ op , handler ])
-                        →  ...
+      β-with-op-handle  :  {Σ : OpContext} {Γ : Context}
+                        {A B Aₒₚ Bₒₚ : ValueType} {Δ Δ' : OpLabels}
+                        {label : String}
+                     →  {handler : Handler Σ Γ A B Δ'}
+                     →  {⊆Δ : (Δ \' (opLabels (Handler.ops handler))) ⊆ Δ'}
+                     →  {op : Operation label Aₒₚ Bₒₚ}
+                     →  {∋opLabel : Δ ∋-oL label}
+                     →  {∋op : Σ ∋ₑ op}
+                     →  {⊢v : Σ ⨟ Γ ⊢v Aₒₚ}
+                     →  {⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ}
+                     →  {⊢opClause : Σ ⨟ Γ ∷ Aₒₚ ∷ (Bₒₚ —→ B ! Δ') ⊢c B ! Δ'}
+                     →  ((Handler.ops handler) ∋-opClauses ([ op , ∋op ]↦ ⊢opClause))
+                     →  `with (`handler handler ⊆Δ) 
+                        handle (`perform op ∋opLabel ∋op ⊢v ⊢body)
+                        ↝
+                        ⊢opClause [ ⊢v ][ 
+                           `fun (
+                              `with weakenᵥ (`handler handler ⊆Δ) 
+                              handle ⊢body) 
+                        ]
+
+      {- 
 
 
       β-with-op-handle  :  {Σ : OpContext} {Γ : Context}
