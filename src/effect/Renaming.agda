@@ -27,21 +27,21 @@ module effect.Renaming where
    rename-ops  : {Σ : OpContext} {Γ Γ' : Context}
                → Renaming Γ Γ'
                → {B : ValueType} {Δ : OpLabels}
-               → OpHandlers Σ Γ B Δ
-               → OpHandlers Σ Γ' B Δ
+               → OpClauses Σ Γ B Δ
+               → OpClauses Σ Γ' B Δ
    rename-ops ρ ∅ = ∅
-   rename-ops ρ (c ∷[ op , ∋op ⇒ handler ]) = 
-      (rename-ops ρ c) ∷[ op , ∋op ⇒ (renameₑ (ext (ext ρ)) handler) ]
+   rename-ops ρ (c ∷ [ op , ∋op ]↦ handler) = 
+      (rename-ops ρ c) ∷ [ op , ∋op ]↦ (renameₑ (ext (ext ρ)) handler)
 
    private
       -- ops under rename doesn't change
       ops-≡-rename  : {Σ : OpContext} {Γ Γ' : Context}
                       {B : ValueType} {Δ : OpLabels}
                     → (ρ : Renaming Γ Γ')
-                    → (handler  : OpHandlers Σ Γ B Δ)
+                    → (handler  : OpClauses Σ Γ B Δ)
                     → (opLabels handler) ≡ (opLabels (rename-ops ρ handler))
       ops-≡-rename ρ ∅ = refl
-      ops-≡-rename ρ (handler ∷[ op , _ ⇒ _ ]) with (ops-≡-rename ρ handler) 
+      ops-≡-rename ρ (handler ∷ [ op , _ ]↦ _) with (ops-≡-rename ρ handler) 
       ... | handler-≡ = cong (_, _) handler-≡
 
    renameᵥ ρ (` ∋x) = ` (ρ ∋x)

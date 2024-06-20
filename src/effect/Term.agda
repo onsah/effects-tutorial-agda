@@ -14,6 +14,8 @@ module effect.Term where
     infix 3 _⨟_⊢v_
     infix 3 _⨟_⊢c_
     infix 5 _`·_
+    infix 4 _∷_
+    infix 10 [_,_]↦_
 
     -- Thought it's appropriate to have effect context as a parameterized type since it's not supposed to change.
     -- Term typing rules are mutually recursive
@@ -22,33 +24,32 @@ module effect.Term where
     -- Hmm: Maybe we should also have OpContext
     data _⨟_⊢c_ (Σ : OpContext) (Γ : Context) : ComputationType → Set
 
-    OpHandler : (Σ : OpContext) (Γ : Context)
-              → (Aᵢ : ValueType)
-              → (Bᵢ : ValueType)
-              → (B : ValueType)
-              → (Δ : OpLabels)
-              → Set
-    OpHandler  Σ Γ Aᵢ Bᵢ B Δ = Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ) ⊢c B ! Δ 
-
-    data OpHandlers (Σ : OpContext) (Γ : Context) 
-                        (B : ValueType)
-                        (Δ : OpLabels) : Set 
-      where
-      ∅       : OpHandlers Σ Γ B Δ
-      -- TODO: drop brackets
-      _∷[_,_⇒_] : {label : String} {Aᵢ Bᵢ : ValueType}
-              → OpHandlers Σ Γ B Δ
+    data OpClause   (Σ : OpContext) (Γ : Context)
+                    (Aᵢ Bᵢ B : ValueType)
+                    (Δ : OpLabels)
+                  : Set where
+      [_,_]↦_  : {label : String}
               → (op : Operation label Aᵢ Bᵢ)
               → (Σ ∋ₑ op)
-              → OpHandler Σ Γ Aᵢ Bᵢ B Δ
-              → OpHandlers Σ Γ B Δ
+              → Σ ⨟ Γ , Aᵢ , (Bᵢ —→ B ! Δ) ⊢c B ! Δ
+              → OpClause Σ Γ Aᵢ Bᵢ B Δ
+
+    data OpClauses  (Σ : OpContext) (Γ : Context) 
+                    (B : ValueType)
+                    (Δ : OpLabels) 
+                  : Set where
+      ∅       : OpClauses Σ Γ B Δ
+      _∷_ : {label : String} {Aᵢ Bᵢ : ValueType}
+              → OpClauses Σ Γ B Δ
+              → OpClause Σ Γ Aᵢ Bᵢ B Δ
+              → OpClauses Σ Γ B Δ
     
     opLabels  : {Σ : OpContext} {Γ : Context}
                 {B : ValueType} {Δ : OpLabels}
-              → OpHandlers Σ Γ B Δ 
+              → OpClauses Σ Γ B Δ 
               → OpLabels
     opLabels  ∅ = ∅
-    opLabels  (_∷[_,_⇒_] {label = label} Υ _ _ _) = (opLabels Υ) , label
+    opLabels  (_∷_ {label = label} Υ _) = (opLabels Υ) , label
 
     -- Asserts that every effect handler body is well typed according to it's effect
     record Handler  (Σ : OpContext) (Γ : Context) 
@@ -57,7 +58,7 @@ module effect.Term where
       inductive
       field
         return  : Σ ⨟ Γ , A ⊢c B ! Δ
-        ops : OpHandlers Σ Γ B Δ
+        ops : OpClauses Σ Γ B Δ
 
       -- TODO: create a constructor
       -- constructor ∥[return_,_] 

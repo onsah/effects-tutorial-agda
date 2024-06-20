@@ -34,11 +34,11 @@ module effect.Substitution where
    subst-ops   : {Σ : OpContext} {Γ Γ' : Context}
                → Substitution Σ Γ Γ'
                → {B : ValueType} {Δ : OpLabels}
-               → OpHandlers Σ Γ B Δ
-               → OpHandlers Σ Γ' B Δ
+               → OpClauses Σ Γ B Δ
+               → OpClauses Σ Γ' B Δ
    subst-ops   σ ∅ = ∅
-   subst-ops   σ (handlers ∷[ op , ∋op ⇒ ⊢handler ]) = 
-      (subst-ops σ handlers) ∷[ op , ∋op ⇒ (subst-c (ext-subst (ext-subst σ)) ⊢handler) ]
+   subst-ops   σ (handlers ∷ [ op , ∋op ]↦ ⊢handler) = 
+      (subst-ops σ handlers) ∷ [ op , ∋op ]↦ (subst-c (ext-subst (ext-subst σ)) ⊢handler)
 
    subst-c σ (`return ⊢A) = `return (subst-v σ ⊢A)
    subst-c σ (`perform op ∋?opLabel ∋?op ⊢arg ⊢body) = 
@@ -56,10 +56,10 @@ module effect.Substitution where
       ops-≡-subst : {Σ : OpContext} {Γ Γ' : Context}
                     {B : ValueType} {Δ : OpLabels}
                   → (σ : Substitution Σ Γ Γ')
-                  → (handler  : OpHandlers Σ Γ B Δ)
+                  → (handler  : OpClauses Σ Γ B Δ)
                   → (opLabels handler) ≡ (opLabels (subst-ops σ handler))
       ops-≡-subst σ ∅ = refl
-      ops-≡-subst σ (handlers ∷[ op , _ ⇒ ⊢handler ]) with (ops-≡-subst σ handlers) 
+      ops-≡-subst σ (handlers ∷ [ op , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
       ... | handlers-≡ = cong (_, _) handlers-≡
 
    subst-v σ (` x) = σ x
