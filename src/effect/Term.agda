@@ -1,4 +1,3 @@
--- {-# OPTIONS --allow-unsolved-metas #-} 
 
 open import Agda.Builtin.String using (String)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong; subst)
@@ -18,13 +17,10 @@ module effect.Term where
     infixl 5 _∷_
     infix 10 [_,_]↦_
 
-    -- Thought it's appropriate to have effect context as a parameterized type since it's not supposed to change.
-    -- Term typing rules are mutually recursive
-    -- Can use '⨟' as separater between context
     data _⨟_⊢v_ (Σ : OpContext) (Γ : Context) : ValueType → Set
-    -- Hmm: Maybe we should also have OpContext
     data _⨟_⊢c_ (Σ : OpContext) (Γ : Context) : ComputationType → Set
 
+    -- An OpClause is an operation and a term that will be used when this operation is performed.
     data OpClause   (Σ : OpContext) (Γ : Context)
                     (Aᵢ Bᵢ B : ValueType)
                     (Δ : OpContext)
@@ -52,7 +48,9 @@ module effect.Term where
     opContext  ∅ = ∅
     opContext (Y ∷ [ op , _ ]↦ _) = (opContext Y) ∷ op
 
-    -- Asserts that every effect handler body is well typed according to it's effect
+    -- A handler block that contains:
+    -- `return`: Default clause when the computation returns normally.
+    -- `ops`: Clauses for operations when compputation performs an effect.
     record Handler  (Σ : OpContext) (Γ : Context) 
                     (A B : ValueType) (Δ : OpContext) : Set 
       where
@@ -88,13 +86,13 @@ module effect.Term where
                   → (Δ \' (opContext (Handler.ops handlers))) ⊆ Δ'
                   → Σ ⨟ Γ ⊢v A ! Δ ⟹ B ! Δ'
 
+    -- Computation terms
     data _⨟_⊢c_ Σ Γ where
         
         `return : {A : ValueType} {Δ : OpContext}
                 → Σ ⨟ Γ ⊢v A
                 → Σ ⨟ Γ ⊢c A ! Δ
 
-        -- Op rule
         `perform  : {Δ : OpContext} 
                     {A Aₒₚ Bₒₚ : ValueType}
                     {opLabel : String} 
