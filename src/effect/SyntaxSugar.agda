@@ -10,7 +10,8 @@ open import effect.Renaming
 
 module effect.SyntaxSugar where
 
-    infixr  3 _⨟_
+    infixl  3 _⨟_
+    infix   6 opCall[_]
 
     opCall[_] : {A B : ValueType}
                 {Σ : OpContext} {Γ : Context} 

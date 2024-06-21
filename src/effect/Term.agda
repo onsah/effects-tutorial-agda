@@ -13,6 +13,7 @@ module effect.Term where
 
     infix 3 _⨟_⊢v_
     infix 3 _⨟_⊢c_
+    infix 4 `do←—_`in_
     infix 5 _`·_
     infixl 5 _∷_
     infix 10 [_,_]↦_
