@@ -59,3 +59,14 @@ module effect.SyntaxSugar where
         → Σ ⨟ Γ ⊢c B ! Δ
     ⊢A ⨟ ⊢B = `do←— ⊢A 
               `in weakenₑ  ⊢B
+
+    [_]↦_ : {Σ : OpContext} {Γ : Context}
+            {Aᵢ Bᵢ B : ValueType}
+            {Δ : OpContext}
+            {label : String}
+            (op : Operation label Aᵢ Bᵢ)
+          → {True (Σ ∋-op? op)}
+          → Σ ⨟ Γ ∷ Aᵢ ∷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
+          → OpClause Σ Γ Aᵢ Bᵢ B Δ label
+
+    [_]↦_ op {∋?op} ⊢clause = [ op , toWitness ∋?op ]↦ ⊢clause
