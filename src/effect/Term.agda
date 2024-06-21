@@ -26,34 +26,34 @@ module effect.Term where
 
     data OpClause   (Σ : OpContext) (Γ : Context)
                     (Aᵢ Bᵢ B : ValueType)
-                    (Δ : OpLabels)
+                    (Δ : OpContext)
+                    (label : String)
                   : Set where
-      [_,_]↦_  : {label : String}
-              → (op : Operation label Aᵢ Bᵢ)
-              → (Σ ∋ₑ op)
+      [_,_]↦_ : (op : Operation label Aᵢ Bᵢ)
+              → (Σ ∋-op op)
               → Σ ⨟ Γ ∷ Aᵢ ∷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
-              → OpClause Σ Γ Aᵢ Bᵢ B Δ
+              → OpClause Σ Γ Aᵢ Bᵢ B Δ label
 
     data OpClauses  (Σ : OpContext) (Γ : Context) 
                     (B : ValueType)
-                    (Δ : OpLabels) 
+                    (Δ : OpContext) 
                   : Set where
       ∅       : OpClauses Σ Γ B Δ
-      _∷_     : {Aᵢ Bᵢ : ValueType}
+      _∷_     : {Aᵢ Bᵢ : ValueType} {label : String}
               → OpClauses Σ Γ B Δ
-              → OpClause Σ Γ Aᵢ Bᵢ B Δ
+              → OpClause Σ Γ Aᵢ Bᵢ B Δ label
               → OpClauses Σ Γ B Δ
     
-    opLabels  : {Σ : OpContext} {Γ : Context}
-                {B : ValueType} {Δ : OpLabels}
+    opContext  : {Σ : OpContext} {Γ : Context}
+                {B : ValueType} {Δ : OpContext}
               → OpClauses Σ Γ B Δ 
-              → OpLabels
-    opLabels  ∅ = ∅
-    opLabels (Y ∷ [ label ⦂ _ —→ _ , _ ]↦ _) = (opLabels Y) ∷ label
+              → OpContext
+    opContext  ∅ = ∅
+    opContext (Y ∷ [ op , _ ]↦ _) = (opContext Y) ∷ op
 
     -- Asserts that every effect handler body is well typed according to it's effect
     record Handler  (Σ : OpContext) (Γ : Context) 
-                    (A B : ValueType) (Δ : OpLabels) : Set 
+                    (A B : ValueType) (Δ : OpContext) : Set 
       where
       inductive
       constructor handler[_,_]
@@ -77,34 +77,34 @@ module effect.Term where
         `s  : String
             → Σ ⨟ Γ ⊢v str
 
-        `fun : {A B : ValueType} {Δ : OpLabels}
+        `fun : {A B : ValueType} {Δ : OpContext}
              → Σ ⨟ (Γ ∷ A) ⊢c B ! Δ
              → Σ ⨟ Γ ⊢v A —→ B ! Δ
 
-        `handler  : {Δ Δ' : OpLabels}
+        `handler  : {Δ Δ' : OpContext}
                     {A B : ValueType}
                   → (handlers : Handler Σ Γ A B Δ')
-                  → (Δ \' (opLabels (Handler.ops handlers))) ⊆ Δ'
+                  → (Δ \' (opContext (Handler.ops handlers))) ⊆ Δ'
                   → Σ ⨟ Γ ⊢v A ! Δ ⟹ B ! Δ'
 
     data _⨟_⊢c_ Σ Γ where
         
-        `return : {A : ValueType} {Δ : OpLabels}
+        `return : {A : ValueType} {Δ : OpContext}
                 → Σ ⨟ Γ ⊢v A
                 → Σ ⨟ Γ ⊢c A ! Δ
 
         -- Op rule
-        `perform  : {Δ : OpLabels} 
+        `perform  : {Δ : OpContext} 
                     {A Aₒₚ Bₒₚ : ValueType}
                     {opLabel : String} 
                   → (op : Operation opLabel Aₒₚ Bₒₚ)
-                  → (∋opLabel : Δ ∋-oL opLabel)
-                  → (Σ ∋ₑ op)
+                  → (Σ ∋-op op)
+                  → (Δ ∋-op op)
                   → (⊢arg : Σ ⨟ Γ ⊢v Aₒₚ)
                   → (⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ)
                   → Σ ⨟ Γ ⊢c A ! Δ
 
-        `do←—_`in_  : {Δ : OpLabels} 
+        `do←—_`in_  : {Δ : OpContext} 
                       {A B : ValueType}
                     → (⊢exp : Σ ⨟ Γ ⊢c A ! Δ)
                     → (⊢body : Σ ⨟ Γ ∷ A ⊢c B ! Δ)
@@ -121,9 +121,9 @@ module effect.Term where
                       → Σ ⨟ Γ ⊢c Aₑ
                       → Σ ⨟ Γ ⊢c Aₑ
 
-        `with_handle_ : {Δ Δ' : OpLabels}
+        `with_handle_ : {Δ Δ' : OpContext}
                         {A B : ValueType}
                       → Σ ⨟ Γ ⊢v A ! Δ' ⟹ B ! Δ
                       → Σ ⨟ Γ ⊢c A ! Δ' 
                       → Σ ⨟ Γ ⊢c B ! Δ
-  
+   

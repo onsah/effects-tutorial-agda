@@ -14,13 +14,13 @@ module effect.SyntaxSugar where
 
     opCall[_] : {A B : ValueType}
                 {Σ : OpContext} {Γ : Context} 
-                {Δ : OpLabels} {opLabel : String}
+                {Δ : OpContext} {opLabel : String}
               → (op : Operation opLabel A B)
-              → {True (Δ ∋-oL? opLabel)}
-              → {True (Σ ∋ₑ? op)}
+              → {True (Σ ∋-op? op)}
+              → {True (Δ ∋-op? op)}
               → Σ ⨟ Γ ⊢v A —→ B ! Δ
-    opCall[_] op {∋?opLabel} {∋ₑ?op} =
-      `fun (`perform op (toWitness ∋?opLabel) (toWitness ∋ₑ?op) (` Z) (`return (` Z)))
+    opCall[_] op {Σ∋?op} {Δ∋?op} =
+      `fun (`perform op (toWitness Σ∋?op) (toWitness Δ∋?op) (` Z) (`return (` Z)))
 
     open import Data.Nat using (_<_; _≤?_; zero; suc; s≤s)
     open import Relation.Nullary.Decidable using (toWitness)
@@ -52,10 +52,10 @@ module effect.SyntaxSugar where
 
     -- Sequencing
     _⨟_ : {Γ : Context} {Σ : OpContext}
-          {A B : ValueType} {Δ : OpLabels}
+          {A B : ValueType} {Δ : OpContext}
         → Σ ⨟ Γ ⊢c A ! Δ
         → Σ ⨟ Γ ⊢c B ! Δ
-        -- Hmm: Should combine opLabels from both terms?
+        -- Hmm: Should combine opContext from both terms?
         → Σ ⨟ Γ ⊢c B ! Δ
     ⊢A ⨟ ⊢B = `do←— ⊢A 
               `in weakenₑ  ⊢B

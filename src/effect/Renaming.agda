@@ -26,7 +26,7 @@ module effect.Renaming where
 
    rename-ops  : {Σ : OpContext} {Γ Γ' : Context}
                → Renaming Γ Γ'
-               → {B : ValueType} {Δ : OpLabels}
+               → {B : ValueType} {Δ : OpContext}
                → OpClauses Σ Γ B Δ
                → OpClauses Σ Γ' B Δ
    rename-ops ρ ∅ = ∅
@@ -37,14 +37,14 @@ module effect.Renaming where
 
       -- ops under rename doesn't change
       ops-≡-rename  : {Σ : OpContext} {Γ Γ' : Context}
-                      {B : ValueType} {Δ : OpLabels}
+                      {B : ValueType} {Δ : OpContext}
                     → (ρ : Renaming Γ Γ')
                     → (handler  : OpClauses Σ Γ B Δ)
-                    → (opLabels handler) ≡ (opLabels (rename-ops ρ handler))
+                    → (opContext handler) ≡ (opContext (rename-ops ρ handler))
       ops-≡-rename ρ ∅ = refl
-      ops-≡-rename ρ (handler ∷ [ label ⦂ _ —→ _ , _ ]↦ _) with (ops-≡-rename ρ handler) 
+      ops-≡-rename ρ (handler ∷ [ op , _ ]↦ _) with (ops-≡-rename ρ handler) 
       ... | handler-≡ =
-         cong (_∷ label) handler-≡
+         cong (_∷ op) handler-≡
 
    renameᵥ ρ (` ∋x) = ` (ρ ∋x)
    renameᵥ ρ `true = `true
@@ -58,8 +58,8 @@ module effect.Renaming where
             (subst (λ x → (Δ \' x) ⊆ Δ') (ops-≡-rename ρ ops) ⊆Δ')
     
    renameₑ ρ (`return ⊢v) = `return (renameᵥ ρ ⊢v)
-   renameₑ ρ (`perform op ∋-oLopLabel ∋ₑop ⊢arg ⊢body) = 
-      `perform op ∋-oLopLabel ∋ₑop 
+   renameₑ ρ (`perform op Σ∋op Δ∋op ⊢arg ⊢body) = 
+      `perform op Σ∋op Δ∋op
         (renameᵥ ρ ⊢arg) 
         (renameₑ (ext ρ) ⊢body)
    renameₑ ρ (`do←— ⊢var `in ⊢body) = 
@@ -74,7 +74,7 @@ module effect.Renaming where
                {Γ : Context} {A B : ValueType}
             →  Σ ⨟ Γ ⊢v A
             →  Σ ⨟ Γ ∷ B ⊢v A
-   weakenₑ  :  {Σ : OpContext} {Δ : OpLabels}
+   weakenₑ  :  {Σ : OpContext} {Δ : OpContext}
                {Γ : Context} {A B : ValueType}
             →  Σ ⨟ Γ ⊢c A ! Δ
             →  Σ ⨟ Γ ∷ B ⊢c A ! Δ

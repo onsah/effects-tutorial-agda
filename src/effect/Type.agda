@@ -1,20 +1,23 @@
 open import Data.String using (String)
 open import Data.String.Properties using (_≟_)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 
 module effect.Type where
     
-    infix  4 _∋-oL_
+    infix  4 _∋-op_
     infixl 5 _∷_
     infix 6 _!_
     infixr 5 _—→_
     infix 5 _⟹_
     infix 5 _⦂_—→_
+    infix 10 _\'_
+    infix 9 _⊆_
 
     data ValueType : Set
     data ComputationType : Set
-    data OpLabels : Set
+    data Operation : String → ValueType → ValueType → Set
+    data OpContext : Set
 
     data ValueType where
         bool : ValueType
@@ -27,11 +30,16 @@ module effect.Type where
 
     data ComputationType where
         -- Operation list is an overappromixation of what the computation actually uses.
-        _!_ : ValueType → OpLabels → ComputationType
+        _!_ : ValueType → OpContext → ComputationType
 
-    data OpLabels where
-        ∅ : OpLabels
-        _∷_ : OpLabels → String → OpLabels
+    data Operation where
+        _⦂_—→_  : (label : String) → (A : ValueType) → (B : ValueType) 
+                → Operation label A B
+    
+    data OpContext where
+        ∅ : OpContext
+        _∷_ : {label : String} {A B : ValueType}
+             → OpContext → Operation label A B → OpContext
 
     _≟-v_ : (A : ValueType)
         → (B : ValueType)
@@ -39,9 +47,9 @@ module effect.Type where
     _≟-c_ : (A : ComputationType)
         → (B : ComputationType)
         → Dec (A ≡ B)
-    _≟-Δ_ : (Δ₁ : OpLabels)
-        → (Δ₂ : OpLabels)
-        → Dec (Δ₁ ≡ Δ₂)
+    _≟-Δ_   : (Δ : OpContext)
+            → (Δ' : OpContext)
+            → Dec (Δ ≡ Δ')
     
     bool ≟-v bool = yes refl
     str ≟-v str = yes refl
@@ -106,59 +114,58 @@ module effect.Type where
 
     ∅ ≟-Δ ∅ = yes refl
     ∅ ≟-Δ (Δ₂ ∷ x) = no (λ())
-    (Δ₁ ∷ x) ≟-Δ ∅ = no (λ())
-    (Δ₁ ∷ x₁) ≟-Δ (Δ₂ ∷ x₂)  with x₁ ≟ x₂ 
-    ... | no x₁≢x₂ = no λ { refl → x₁≢x₂ refl}
-    ... | yes refl with Δ₁ ≟-Δ Δ₂
-    ...   | no Δ₁≢Δ₂ = no λ { refl → Δ₁≢Δ₂ refl}
-    ...   | yes refl = yes refl
+    (_ ∷ _) ≟-Δ ∅ = no (λ())
+    (Δ ∷ (label ⦂ A —→ B)) ≟-Δ (Δ' ∷ (label' ⦂ A' —→ B')) with Δ ≟-Δ Δ'
+    ... | no ¬Δ≡Δ = no (λ{ refl → ¬Δ≡Δ refl})
+    ... | yes Δ≡Δ' with label ≟ label' | A ≟-v A' | B ≟-v B'
+    ...   | no label≢label    | _         | _         = no (λ{ refl → label≢label refl})
+    ...   | _                 | no A≢A    | _         = no (λ{ refl → A≢A refl})
+    ...   | _                 | _         | no B≢B    = no (λ{ refl → B≢B refl})
+    ...   | yes refl          | yes refl  | yes refl = yes (cong (_∷ (label ⦂ A —→ B)) Δ≡Δ')
 
-    data _∋-oL_ : OpLabels → String → Set 
-        where
-        Z-oL : {Δ : OpLabels} {oL : String}
-            → Δ ∷ oL ∋-oL oL
+    data _∋-op_   : {label : String} {A B : ValueType}
+                  → OpContext → Operation label A B → Set 
+      where
+      Z  : {Δ : OpContext}
+           {label : String} {A B : ValueType}
+           {op : Operation label A B}
+         → Δ ∷ op ∋-op op
     
-        S-oL : {Δ : OpLabels}
-            {oL oL' : String}
-          → ¬ (oL ≡ oL')
-          → Δ ∋-oL oL
-          → Δ ∷ oL' ∋-oL oL
+      S_ : {Δ : OpContext}
+           {label label' : String} {A A' B B' : ValueType}
+           {op : Operation label A B} {op' : Operation label' A' B'}
+         -- → ¬ (op ≡ op')
+         → Δ ∋-op op
+         → Δ ∷ op' ∋-op op
 
     -- This is used for proof by reflection
     -- So that we can just specify the label of the effect and the proof is found automatically
-    _∋-oL?_ : (Δ : OpLabels) → (opLabel : String)
-            → Dec (Δ ∋-oL opLabel)
-    ∅ ∋-oL? opLabel = no (λ())
-    (Δ ∷ x) ∋-oL? opLabel with opLabel ≟ x
-    ... | yes refl = yes Z-oL
-    ... | no opLabel≢x with Δ ∋-oL? opLabel
-    ...   | yes ∋opLabel = yes (S-oL opLabel≢x ∋opLabel)
-    ...   | no ¬∋opLabel = no (λ{ Z-oL → opLabel≢x refl
-                                ; (S-oL _ ∋opLabel) → ¬∋opLabel ∋opLabel})
-    private
-        contains : (Δ : OpLabels) → (oL : String) → Dec (Δ ∋-oL oL)
-        contains ∅ oL = no λ()
-        contains (Δ ∷ oL') oL with oL ≟ oL'
-        ... | yes refl = yes Z-oL
-        ... | no ¬Z with contains Δ oL
-        ...   | yes ∋oL = yes (S-oL ¬Z ∋oL)
-        ...   | no ¬S = no (λ{ Z-oL → ¬Z refl
-                            ; (S-oL _ ∋oL) → ¬S ∋oL}) 
+    _∋-op?_ : {label : String} {A B : ValueType}
+              (Δ : OpContext) 
+            → (op : Operation label A B)
+            → Dec (Δ ∋-op op)
+    ∅                     ∋-op? _ = no (λ())
+    (Δ ∷ (label ⦂ A —→ B)) ∋-op? op@(label' ⦂ A' —→ B') with label ≟ label' | A ≟-v A' | B ≟-v B' | Δ ∋-op? op
+    ...   | yes refl          | yes refl  | yes refl | _       = yes Z
+    ...   | no label≢label    | _         | _        | yes ∋op = yes (S ∋op)
+    ...   | no label≢label    | _         | _        | no ∌op  = no (λ{ Z → label≢label refl
+                                                                     ; (S ∋op) → ∌op ∋op})
+    ...   | _                 | no A≢A    | _        | yes ∋op = yes (S ∋op)
+    ...   | _                 | no A≢A    | _        | no ∌op  = no (λ{ Z → A≢A refl
+                                                                      ; (S ∋op) → ∌op ∋op})
+    ...   | _                 | _         | no B≢B   | yes ∋op = yes (S ∋op)
+    ...   | _                 | _         | no B≢B   | no ∌op  = no (λ{ Z → B≢B refl
+                                                                      ; (S ∋op) → ∌op ∋op})
 
-    _⊆_ : OpLabels → OpLabels → Set
-    Δ ⊆ Δ' = ∀ (s : String) → Δ ∋-oL s → Δ' ∋-oL s
+    _⊆_ : OpContext → OpContext → Set
+    Δ ⊆ Δ' = ∀ {label : String} {A B : ValueType} (op : Operation label A B) 
+               → Δ ∋-op op → Δ' ∋-op op
 
-    _\'_ : OpLabels → OpLabels → OpLabels
+    _\'_ : OpContext → OpContext → OpContext
     ∅ \' Δ' = ∅
-    (Δ ∷ x) \' Δ' with contains Δ' x
+    (Δ ∷ op) \' Δ' with Δ' ∋-op? op
     ... | yes _ = Δ \' Δ'
-    ... | no _ = (Δ \' Δ') ∷ x
-
-    data Operation : String → ValueType → ValueType → Set
-
-    data Operation where
-        _⦂_—→_  : (label : String) → (A : ValueType) → (B : ValueType) 
-                → Operation label A B
+    ... | no _ = (Δ \' Δ') ∷ op
 
     private
         label : ∀ {label A B}
@@ -174,4 +181,4 @@ module effect.Type where
     ... | no label≢label' | _         | _         = no λ  {refl → label≢label' refl}
     ... | _               | no A≢A'   | _         = no λ  {refl → A≢A' refl}
     ... | _               | _         | no B≢B'   = no λ  {refl → B≢B' refl}
- 
+  

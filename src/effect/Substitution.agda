@@ -19,7 +19,7 @@ module effect.Substitution where
    ext-subst σ Z = ` Z
    ext-subst σ (S x) = renameᵥ S_ (σ x)
 
-   subst-c  : {Σ : OpContext} {Δ : OpLabels}
+   subst-c  : {Σ : OpContext} {Δ : OpContext}
               {Γ Γ' : Context} {A : ValueType}
             → Substitution Σ Γ Γ'
             → Σ ⨟ Γ  ⊢c A ! Δ
@@ -33,7 +33,7 @@ module effect.Substitution where
 
    subst-ops   : {Σ : OpContext} {Γ Γ' : Context}
                → Substitution Σ Γ Γ'
-               → {B : ValueType} {Δ : OpLabels}
+               → {B : ValueType} {Δ : OpContext}
                → OpClauses Σ Γ B Δ
                → OpClauses Σ Γ' B Δ
    subst-ops   σ ∅ = ∅
@@ -41,8 +41,8 @@ module effect.Substitution where
       (subst-ops σ handlers) ∷ [ op , ∋op ]↦ (subst-c (ext-subst (ext-subst σ)) ⊢handler)
 
    subst-c σ (`return ⊢A) = `return (subst-v σ ⊢A)
-   subst-c σ (`perform op ∋opLabel ∋op ⊢arg ⊢body) = 
-      `perform op ∋opLabel ∋op (subst-v σ ⊢arg) (subst-c (ext-subst σ) ⊢body)
+   subst-c σ (`perform op Σ∋op Δ∋op ⊢arg ⊢body) = 
+      `perform op Σ∋op Δ∋op (subst-v σ ⊢arg) (subst-c (ext-subst σ) ⊢body)
    subst-c σ (`do←— ⊢exp `in ⊢body) = 
       `do←— (subst-c σ ⊢exp) `in (subst-c (ext-subst σ) ⊢body)
    subst-c σ (⊢fn `· ⊢arg) = (subst-v σ ⊢fn) `· (subst-v σ ⊢arg)
@@ -54,13 +54,13 @@ module effect.Substitution where
    private
       -- ops under rename doesn't change
       ops-≡-subst : {Σ : OpContext} {Γ Γ' : Context}
-                    {B : ValueType} {Δ : OpLabels}
+                    {B : ValueType} {Δ : OpContext}
                   → (σ : Substitution Σ Γ Γ')
                   → (handler  : OpClauses Σ Γ B Δ)
-                  → (opLabels handler) ≡ (opLabels (subst-ops σ handler))
+                  → (opContext handler) ≡ (opContext (subst-ops σ handler))
       ops-≡-subst σ ∅ = refl
-      ops-≡-subst σ (handlers ∷ [ label ⦂ _ —→ _ , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
-      ... | handlers-≡ = cong (_∷ label) handlers-≡
+      ops-≡-subst σ (handlers ∷ [ op , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
+      ... | handlers-≡ = cong (_∷ op) handlers-≡
 
    subst-v σ (` x) = σ x
    subst-v _ `true = `true

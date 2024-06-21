@@ -10,7 +10,6 @@ open import effect.Util
 module effect.Context where
 
     infix  4 _∋_
-    infix  4 _∋ₑ_
     infixl 5 _∷_
 
     data Context : Set where
@@ -25,31 +24,10 @@ module effect.Context where
            → Γ ∋ A
            → Γ ∷ B ∋ A
 
-    -- Unlike Context, this is fixed throughout the whole program.
-    -- It's the list of predefined effect signatures that could be used in the program.
-    data OpContext : Set where
-        ∅ : OpContext
-        _∷_ : {label : String} {A B : ValueType}
-             → OpContext → Operation label A B → OpContext
-
-    data _∋ₑ_ : {label : String} {A B : ValueType}
-              → OpContext → Operation label A B → Set
-        where
-        Z  : {Γ : OpContext}
-              {label : String} {A B : ValueType} 
-              {op : Operation label A B}
-            → Γ ∷ op ∋ₑ op
-        
-        S_ : {Γ : OpContext}
-              {label label' : String} {A A' B B' : ValueType} 
-              {op : Operation label A B} {op' : Operation label' A' B'}
-            → Γ ∋ₑ op
-            → Γ ∷ op' ∋ₑ op
-
     _∋ₑ?_ : {A B : ValueType} {label : String}
           → (Σ : OpContext)
           → (op : Operation label A B)
-          → Dec (Σ ∋ₑ op)
+          → Dec (Σ ∋-op op)
     ∅ ∋ₑ? op = no (λ())
     _∋ₑ?_ {A = A} {B = B} {label = label} (_∷_ {label = label'} {A = A'} {B = B'} Σ op') op 
       with label ≟ label' | A ≟-v A'  | B ≟-v B'
