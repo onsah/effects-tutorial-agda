@@ -97,8 +97,8 @@ module effect.Term where
                     {A Aₒₚ Bₒₚ : ValueType}
                     {opLabel : String} 
                   → (op : Operation opLabel Aₒₚ Bₒₚ)
-                  → (Σ ∋-op op)
-                  → (Δ ∋-op op)
+                  → (Σ∋op : Σ ∋-op op)
+                  → (Δ∋op : Δ ∋-op op)
                   → (⊢arg : Σ ⨟ Γ ⊢v Aₒₚ)
                   → (⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ)
                   → Σ ⨟ Γ ⊢c A ! Δ
