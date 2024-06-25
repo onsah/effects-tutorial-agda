@@ -115,9 +115,9 @@ module effect.Reduction where
 
       β-do-return :  {Σ : OpContext} {Γ : Context}
                      {C V : ValueType} {Δ : OpContext}
-                  →  {⊢V : Σ ⨟ Γ ⊢v V}
-                  →  {⊢C : Σ ⨟ Γ ∷ V ⊢c C ! Δ}
-                  → `do←— `return ⊢V `in ⊢C ↝ ⊢C [ ⊢V ]
+                  →  (⊢v : Σ ⨟ Γ ⊢v V)
+                  →  (⊢c : Σ ⨟ Γ ∷ V ⊢c C ! Δ)
+                  → `do←— `return ⊢v `in ⊢c ↝ ⊢c [ ⊢v ]
 
       β-do-op     :  {Σ : OpContext} {Γ : Context}
                      {A B C D : ValueType} {Δ : OpContext}
@@ -138,21 +138,21 @@ module effect.Reduction where
                                                          ; (S ∋A) → S (S ∋A)}) ⊢do-body))
 
       β-if-true   :  {Σ : OpContext} {Γ : Context}
-                     {A B : ValueType} {Δ : OpContext}
-                  →  {⊢then : Σ ⨟ Γ ⊢c A ! Δ}
-                  →  {⊢else : Σ ⨟ Γ ⊢c A ! Δ}
+                     {A : ValueType} {Δ : OpContext}
+                  →  (⊢then : Σ ⨟ Γ ⊢c A ! Δ)
+                  →  (⊢else : Σ ⨟ Γ ⊢c A ! Δ)
                   →  `if `true then ⊢then else ⊢else ↝ ⊢then
 
       β-if-false  :  {Σ : OpContext} {Γ : Context}
-                     {A B : ValueType} {Δ : OpContext}
-                  →  {⊢then : Σ ⨟ Γ ⊢c A ! Δ}
-                  →  {⊢else : Σ ⨟ Γ ⊢c A ! Δ}
+                     {A : ValueType} {Δ : OpContext}
+                  →  (⊢then : Σ ⨟ Γ ⊢c A ! Δ)
+                  →  (⊢else : Σ ⨟ Γ ⊢c A ! Δ)
                   →  `if `false then ⊢then else ⊢else ↝ ⊢else
 
       β-fun-app   :  {Σ : OpContext} {Γ : Context}
                      {A B : ValueType} {Δ : OpContext}
-                  →  {⊢body : Σ ⨟ Γ ∷ A ⊢c B ! Δ}
-                  →  {⊢arg : Σ ⨟ Γ ⊢v A}
+                  →  (⊢body : Σ ⨟ Γ ∷ A ⊢c B ! Δ)
+                  →  (⊢arg : Σ ⨟ Γ ⊢v A)
                   →  (`fun ⊢body) `· ⊢arg ↝ ⊢body [ ⊢arg ]
 
       ξ-with      :  {Σ : OpContext} {Γ : Context}
@@ -166,7 +166,7 @@ module effect.Reduction where
                         {A B : ValueType} {Δ Δ' : OpContext}
                      →  {handlers : Handler Σ Γ A B Δ'}
                      →  {⊆Δ : (Δ \' (opContext (Handler.ops handlers))) ⊆ Δ'}
-                     →  {⊢v : Σ ⨟ Γ ⊢v A}
+                     →  (⊢v : Σ ⨟ Γ ⊢v A)
                      →  (`with_handle_ {Δ' = Δ} (`handler handlers ⊆Δ) (`return ⊢v)) 
                         ↝
                         ((Handler.return handlers) [ ⊢v ] )
