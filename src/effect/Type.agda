@@ -167,11 +167,6 @@ module effect.Type where
    ... | yes _ = Δ \' Δ'
    ... | no  _ = (Δ \' Δ') ∷ op
 
-   private
-      label : ∀ {label A B}
-            → Operation label A B → String
-      label (label ⦂ _ —→ _) = label
-
    _≟-op_   : ∀ {label A B}
             → (op : Operation label A B)
             → (op' : Operation label A B)
