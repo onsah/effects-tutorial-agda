@@ -42,7 +42,7 @@ module effect.Reduction where
       σ (S Z) = ⊢V1
       σ (S (S ∋A)) = ` ∋A
 
-   data _∋-opClauses_ :  
+   data _∋-opClause_ :  
         {Σ : OpContext} {Γ : Context}
         {Aᵢ Bᵢ B : ValueType}
         {Δ : OpContext} {label : String}
@@ -55,15 +55,15 @@ module effect.Reduction where
            {Δ : OpContext} {label : String}
          → (opClauses : OpClauses Σ Γ B Δ)
          → (opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ label)
-         → (opClauses ∷ opClause) ∋-opClauses opClause
+         → (opClauses ∷ opClause) ∋-opClause opClause
 
       S_ : {Σ : OpContext} {Γ : Context}
            {Aᵢ Bᵢ B : ValueType}
            {Δ : OpContext} {label : String}
          → (opClauses : OpClauses Σ Γ B Δ)
          → (opClause opClause' : OpClause Σ Γ Aᵢ Bᵢ B Δ label)
-         → opClauses ∋-opClauses opClause
-         → (opClauses ∷ opClause') ∋-opClauses opClause
+         → opClauses ∋-opClause opClause
+         → (opClauses ∷ opClause') ∋-opClause opClause
 
    private
       ⊆Δ→∋op'  : {Δ Δ' : OpContext}
@@ -182,7 +182,7 @@ module effect.Reduction where
                         →  {⊢v : Σ ⨟ Γ ⊢v Aₒₚ}
                         →  {⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ}
                         →  {⊢opClause : Σ ⨟ Γ ∷ Aₒₚ ∷ (Bₒₚ —→ B ! Δ') ⊢c B ! Δ'}
-                        →  ((Handler.ops handler) ∋-opClauses ([ op , Σ∋op ]↦ ⊢opClause))
+                        →  ((Handler.ops handler) ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause))
                         →  `with (`handler handler ⊆Δ) 
                            handle (`perform op Σ∋op Δ∋op ⊢v ⊢body)
                            ↝
