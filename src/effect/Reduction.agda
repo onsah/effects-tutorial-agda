@@ -57,13 +57,14 @@ module effect.Reduction where
          → (opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ label)
          → (opClauses ∷ opClause) ∋-opClause opClause
 
-      S_ : {Σ : OpContext} {Γ : Context}
-           {Aᵢ Bᵢ B : ValueType}
-           {Δ : OpContext} {label : String}
-         → (opClauses : OpClauses Σ Γ B Δ)
-         → (opClause opClause' : OpClause Σ Γ Aᵢ Bᵢ B Δ label)
+      S_  : {Σ : OpContext} {Γ : Context}
+           {Aᵢ Aᵢ′ Bᵢ Bᵢ′ B : ValueType}
+           {Δ : OpContext} {label label′ : String}
+         → {opClauses : OpClauses Σ Γ B Δ}
+         → {opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ label}
+         → {opClause′ : OpClause Σ Γ Aᵢ′ Bᵢ′ B Δ label′}
          → opClauses ∋-opClause opClause
-         → (opClauses ∷ opClause') ∋-opClause opClause
+         → (opClauses ∷ opClause′) ∋-opClause opClause
 
    private
       ⊆Δ→∋op'  : {Δ Δ' : OpContext}
@@ -177,14 +178,15 @@ module effect.Reduction where
                         →  {handler : Handler Σ Γ A B Δ'}
                         →  {⊆Δ : (Δ \' (opContext (Handler.ops handler))) ⊆ Δ'}
                         →  {op : Operation label Aₒₚ Bₒₚ}
-                        →  {Σ∋op : Σ ∋-op op}
+                        -- Is it okay to have separate proofs here?
+                        →  {Σ∋op Σ∋op′ : Σ ∋-op op}
                         →  {Δ∋op : Δ ∋-op op}
                         →  {⊢v : Σ ⨟ Γ ⊢v Aₒₚ}
                         →  {⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ}
                         →  {⊢opClause : Σ ⨟ Γ ∷ Aₒₚ ∷ (Bₒₚ —→ B ! Δ') ⊢c B ! Δ'}
                         →  ((Handler.ops handler) ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause))
                         →  `with (`handler handler ⊆Δ) 
-                           handle (`perform op Σ∋op Δ∋op ⊢v ⊢body)
+                           handle (`perform op Σ∋op′ Δ∋op ⊢v ⊢body)
                            ↝
                            ⊢opClause [ ⊢v ][ 
                               `fun (
@@ -200,10 +202,9 @@ module effect.Reduction where
                      →  {op : Operation label Aₒₚ Bₒₚ}
                      →  {Σ∋op : Σ ∋-op op}
                      →  {Δ∋op : Δ ∋-op op}
-                     →  {⊢v : Σ ⨟ Γ ⊢v Aₒₚ}
-                     →  {⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ}
-                     →  {⊢opClause : Σ ⨟ Γ ∷ Aₒₚ ∷ (Bₒₚ —→ B ! Δ') ⊢c B ! Δ'}
-                     →  (¬∋op : ¬ (opContext (Handler.ops handler) ∋-op op))
+                     →  (⊢v : Σ ⨟ Γ ⊢v Aₒₚ)
+                     →  (⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ)
+                     →  (¬∋op : ¬ (handlerOps handler ∋-op op))
                      →  `with (`handler handler ⊆Δ) 
                         handle (`perform op Σ∋op Δ∋op ⊢v ⊢body)
                         ↝
