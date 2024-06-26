@@ -1,5 +1,9 @@
 
 open import Data.String using (String)
+open import Data.Product using (∃-syntax)
+open import Relation.Nullary using (Dec; yes; no; ¬_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
+open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩; _,′_ to ⟨_,′_⟩)
 
 open import effect.Type
 open import effect.Context
@@ -32,6 +36,19 @@ module effect.Progress (Σ : OpContext) where
             → {⊢c′ : Σ ⨟ ∅ ⊢c A ! Δ}
             → ⊢c ↝ ⊢c′
             → Progress (⊢c)
+
+   ∋op→∋opClause  : {Σ Δ : OpContext} {Γ : Context}
+                    {Aₒₚ Bₒₚ B : ValueType} {label : String}
+                    {op : Operation label Aₒₚ Bₒₚ}
+                  → (opClauses : OpClauses Σ Γ B Δ)
+                  → (opContext opClauses) ∋-op op
+                  → ∃[ ⊢opClause ] ∃[ Σ∋op ] opClauses ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause) 
+   ∋op→∋opClause {op = op} (opClauses ∷ opClause@([ .op , Σ∋op ]↦ ⊢clause)) Z = 
+      ⟨ ⊢clause , ⟨ Σ∋op , Z opClauses opClause ⟩ ⟩
+   ∋op→∋opClause {op = op} (opClauses ∷ ([ _ , _ ]↦ _)) (S ∋op) 
+      with ∋op→∋opClause opClauses ∋op
+   ... | ⟨ ⊢opClause , ⟨ Σ∋op , ∋opClause ⟩ ⟩ = 
+      ⟨ ⊢opClause , ⟨ Σ∋op , S ∋opClause ⟩ ⟩
 
    progress : {A : ValueType} {Δ : OpContext}
             → (⊢c : Σ ⨟ ∅ ⊢c A ! Δ)
@@ -71,5 +88,12 @@ module effect.Progress (Σ : OpContext) where
    progress (`with ⊢handler handle ⊢with@(`with _ handle _)) with progress ⊢with
    ... | step with↝ = step (ξ-with with↝)
    
-   progress (`with ⊢handler handle `perform op Σ∋op Δ∋op ⊢arg ⊢exp) = {!   !}
-        
+   progress (`with 
+               `handler handler ⊆Δ 
+            handle 
+               `perform op Σ∋op Δ∋op ⊢arg ⊢exp) with handlerOps handler ∋-op? op
+   ... | no ∌op = step (β-with-op-skip ⊢arg ⊢exp  ∌op)
+   ... | yes ∋op with ∋op→∋opClause (Handler.ops handler) ∋op
+   ... | ⟨ ⊢opClause , ⟨ Σ∋op′ , ∋opClause ⟩ ⟩ 
+      = step (β-with-op-handle ∋opClause)
+          
