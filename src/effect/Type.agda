@@ -2,6 +2,7 @@ open import Data.String using (String)
 open import Data.String.Properties using (_≟_)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
+open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩; _,′_ to ⟨_,′_⟩)
 
 module effect.Type where
     
@@ -166,6 +167,16 @@ module effect.Type where
    (Δ ∷ op) \' Δ' with Δ' ∋-op? op
    ... | yes _ = Δ \' Δ'
    ... | no  _ = (Δ \' Δ') ∷ op
+
+   _≟-op′_  : ∀ {label label′ A A′ B B′}
+            → (op : Operation label A B)
+            → (op' : Operation label′ A′ B′)
+            → Dec (label ≡ label′ × A ≡ A′ × B ≡ B′)
+   (label ⦂ A —→ B) ≟-op′ (label′ ⦂ A′ —→ B′) with label ≟ label′ | A ≟-v A′ | B ≟-v B′
+   ... | yes refl        | yes refl  | yes refl  = yes ⟨ refl ,′ ⟨ refl ,′ refl ⟩ ⟩
+   ... | no label≢label′ | _         | _         = no (λ{ ⟨ label≡label′ , _ ⟩ → label≢label′ label≡label′})
+   ... | _               | no A≢A′   | _         = no (λ{ ⟨ _ , ⟨ A≡A′ , _ ⟩ ⟩ → A≢A′ A≡A′})
+   ... | _               | _         | no B≢B′   = no (λ{ ⟨ _ , ⟨ _ , B≡B′ ⟩ ⟩ → B≢B′ B≡B′})
 
    _≟-op_   : ∀ {label A B}
             → (op : Operation label A B)
