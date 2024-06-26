@@ -41,7 +41,7 @@ module effect.Term where
               → OpClause Σ Γ Aᵢ Bᵢ B Δ label
               → OpClauses Σ Γ B Δ
     
-    opContext  : {Σ : OpContext} {Γ : Context}
+    opContext : {Σ : OpContext} {Γ : Context}
                 {B : ValueType} {Δ : OpContext}
               → OpClauses Σ Γ B Δ 
               → OpContext
@@ -59,6 +59,12 @@ module effect.Term where
       field
         return  : Σ ⨟ Γ ∷ A ⊢c B ! Δ
         ops : OpClauses Σ Γ B Δ
+
+    handlerOps  : {Σ : OpContext} {Γ : Context}
+                  {A B : ValueType} {Δ : OpContext}
+                → Handler Σ Γ A B Δ
+                → OpContext
+    handlerOps handler = opContext (Handler.ops handler)
 
     -- Value terms
     data _⨟_⊢v_ Σ Γ where
@@ -82,8 +88,8 @@ module effect.Term where
 
         `handler  : {Δ Δ' : OpContext}
                     {A B : ValueType}
-                  → (handlers : Handler Σ Γ A B Δ')
-                  → (Δ \' (opContext (Handler.ops handlers))) ⊆ Δ'
+                  → (handler : Handler Σ Γ A B Δ')
+                  → (Δ \' (opContext (Handler.ops handler))) ⊆ Δ'
                   → Σ ⨟ Γ ⊢v A ! Δ ⟹ B ! Δ'
 
     -- Computation terms
@@ -125,4 +131,4 @@ module effect.Term where
                       → Σ ⨟ Γ ⊢v A ! Δ' ⟹ B ! Δ
                       → Σ ⨟ Γ ⊢c A ! Δ' 
                       → Σ ⨟ Γ ⊢c B ! Δ
-   
+    
