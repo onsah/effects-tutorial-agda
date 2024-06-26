@@ -54,13 +54,22 @@ module effect.Progress (Σ : OpContext) where
    progress (`do←— ⊢exp `in ⊢body) with progress ⊢exp
    ... | done-value ⊢v = step (β-do-return ⊢v ⊢body)
    ... | done-op _ _ _ ⊢arg ⊢cont = step (β-do-op ⊢arg ⊢cont ⊢body)
-   ... | step exp↝exp→′ = step (ξ-do exp↝exp→′)
+   ... | step exp↝exp′ = step (ξ-do exp↝exp′)
    
    progress (`with `handler _ _ handle `return ⊢v) = 
       step (β-with-return ⊢v)
-   progress (`with ⊢handler handle (`do←— ⊢exp `in ⊢exp₁)) = {!   !}
-   progress (`with ⊢handler handle (x `· x₁)) = {!   !}
-   progress (`with ⊢handler handle `if x then ⊢exp else ⊢exp₁) = {!   !}
-   progress (`with ⊢handler handle (`with x handle ⊢exp)) = {!   !}
+      
+   progress (`with ⊢handler handle ⊢exp@(`do←— _ `in _)) with progress ⊢exp
+   ... | step exp↝expr′ = step (ξ-with exp↝expr′)
+   
+   progress (`with ⊢handler handle ⊢fun-app@(`fun ⊢body `· ⊢arg)) with progress ⊢fun-app 
+   ... | step fun-app↝ = step (ξ-with fun-app↝)
+
+   progress (`with ⊢handler handle ⊢if@(`if _ then _ else _)) with progress ⊢if
+   ... | step if↝ = step (ξ-with if↝)
+   
+   progress (`with ⊢handler handle ⊢with@(`with _ handle _)) with progress ⊢with
+   ... | step with↝ = step (ξ-with with↝)
+   
    progress (`with ⊢handler handle `perform op Σ∋op Δ∋op ⊢arg ⊢exp) = {!   !}
-       
+        
