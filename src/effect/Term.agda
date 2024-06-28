@@ -22,23 +22,21 @@ module effect.Term where
 
     -- An OpClause is an operation and a term that will be used when this operation is performed.
     data OpClause   (Σ : OpContext) (Γ : Context)
-                    (Aᵢ Bᵢ B : ValueType)
+                    (B : ValueType)
                     (Δ : OpContext)
-                    (label : String)
                   : Set where
-      [_,_]↦_ : (op : Operation label Aᵢ Bᵢ)
+      [_,_]↦_ : (op : Operation)
               → (Σ ∋-op op)
-              → Σ ⨟ Γ ▷ Aᵢ ▷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
-              → OpClause Σ Γ Aᵢ Bᵢ B Δ label
+              → Σ ⨟ Γ ▷ (opArg op) ▷ ((opRet op) —→ B ! Δ) ⊢c B ! Δ
+              → OpClause Σ Γ B Δ
 
     data OpClauses  (Σ : OpContext) (Γ : Context) 
                     (B : ValueType)
                     (Δ : OpContext) 
                   : Set where
       ∅       : OpClauses Σ Γ B Δ
-      _▷_     : {Aᵢ Bᵢ : ValueType} {label : String}
-              → OpClauses Σ Γ B Δ
-              → OpClause Σ Γ Aᵢ Bᵢ B Δ label
+      _▷_     : OpClauses Σ Γ B Δ
+              → OpClause Σ Γ B Δ
               → OpClauses Σ Γ B Δ
     
     opContext : {Σ : OpContext} {Γ : Context}
@@ -100,13 +98,12 @@ module effect.Term where
                 → Σ ⨟ Γ ⊢c A ! Δ
 
         `perform  : {Δ : OpContext} 
-                    {A Aₒₚ Bₒₚ : ValueType}
-                    {opLabel : String} 
-                  → (op : Operation opLabel Aₒₚ Bₒₚ)
+                    {A : ValueType}
+                  → (op : Operation)
                   → (Σ∋op : Σ ∋-op op)
                   → (Δ∋op : Δ ∋-op op)
-                  → (⊢arg : Σ ⨟ Γ ⊢v Aₒₚ)
-                  → (⊢body : Σ ⨟ Γ ▷ Bₒₚ ⊢c A ! Δ)
+                  → (⊢arg : Σ ⨟ Γ ⊢v (opArg op))
+                  → (⊢body : Σ ⨟ Γ ▷ (opRet op) ⊢c A ! Δ)
                   → Σ ⨟ Γ ⊢c A ! Δ
 
         `do←—_`in_  : {Δ : OpContext} 
@@ -131,4 +128,4 @@ module effect.Term where
                       → Σ ⨟ Γ ⊢v A ! Δ' ⟹ B ! Δ
                       → Σ ⨟ Γ ⊢c A ! Δ' 
                       → Σ ⨟ Γ ⊢c B ! Δ
-    
+     

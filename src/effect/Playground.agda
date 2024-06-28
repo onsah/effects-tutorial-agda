@@ -7,14 +7,14 @@ open import Agda.Builtin.String using (String)
 
 module effect.Playground where
 
-   read : Operation "read" _ _
+   read : Operation
    read = "read" ⦂ unit —→ str 
 
-   print : Operation "print" _ _
+   print : Operation
    print = "print" ⦂ str —→ unit
 
    Σ : OpContext
-   Σ = ∅ ∷ read ∷ print
+   Σ = ∅ ▷ read ▷ print
     
    Δ : OpContext
    Δ = Σ
@@ -47,20 +47,20 @@ module effect.Playground where
    _ : Σ ⨟ ∅ ⊢v str —→ unit ! ∅
    _ = `fun (`return `unit)
 
-   _ : Σ ⨟ (∅ ∷ str ∷ unit ∷ int) ⊢v str —→ unit ! ∅
+   _ : Σ ⨟ (∅ ▷ str ▷ unit ▷ int) ⊢v str —→ unit ! ∅
    _ = `fun (`return (# 2))
 
     --------------- TEST: handler
     
 
    Δ' : OpContext
-   Δ' = ∅ ∷ read
+   Δ' = ∅ ▷ read
 
    _ : Σ ⨟ ∅ ⊢v str ! Δ' ⟹ str ! ∅
    _ = `handler
             handler[ 
                `return (# 0) , 
-               ∅ ∷ [ read ]↦ `return (`s "data") 
+               ∅ ▷ [ read ]↦ `return (`s "data") 
             ]
             λ{ _ () }
 

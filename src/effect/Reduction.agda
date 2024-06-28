@@ -44,46 +44,44 @@ module effect.Reduction where
 
    data _∋-opClause_ :  
         {Σ : OpContext} {Γ : Context}
-        {Aᵢ Bᵢ B : ValueType}
-        {Δ : OpContext} {label : String}
+        {B : ValueType}
+        {Δ : OpContext}
       → OpClauses Σ Γ B Δ
-      → OpClause Σ Γ Aᵢ Bᵢ B Δ label
+      → OpClause Σ Γ B Δ
       → Set where
       
       Z  : {Σ : OpContext} {Γ : Context}
-           {Aᵢ Bᵢ B : ValueType}
-           {Δ : OpContext} {label : String}
+           {B : ValueType}
+           {Δ : OpContext}
          → (opClauses : OpClauses Σ Γ B Δ)
-         → (opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ label)
+         → (opClause : OpClause Σ Γ B Δ)
          → (opClauses ▷ opClause) ∋-opClause opClause
 
       S_  : {Σ : OpContext} {Γ : Context}
-           {Aᵢ Aᵢ′ Bᵢ Bᵢ′ B : ValueType}
-           {Δ : OpContext} {label label′ : String}
+           {B : ValueType}
+           {Δ : OpContext}
          → {opClauses : OpClauses Σ Γ B Δ}
-         → {opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ label}
-         → {opClause′ : OpClause Σ Γ Aᵢ′ Bᵢ′ B Δ label′}
+         → {opClause : OpClause Σ Γ B Δ}
+         → {opClause′ : OpClause Σ Γ B Δ}
          → opClauses ∋-opClause opClause
          → (opClauses ▷ opClause′) ∋-opClause opClause
 
    private
       ⊆Δ→∋op'  : {Δ Δ' : OpContext}
-                    {label : String} {A B : ValueType}
-                    {op : Operation label A B}
-                  → Δ ⊆ Δ'
-                  → (Δ ∋-op op)
-                  → (Δ' ∋-op op)
+                 {op : Operation}
+               → Δ ⊆ Δ'
+               → (Δ ∋-op op)
+               → (Δ' ∋-op op)
       ⊆Δ→∋op' {op = op} Δ⊆Δ' ∋label = Δ⊆Δ' op ∋label
 
       \∋ : {Δ Δ' : OpContext}
-           {label : String} {A B : ValueType}
-           {op : Operation label A B}
+           {op : Operation}
          → (Δ ∋-op op)
          → ¬ (Δ' ∋-op op)
          → Δ \' Δ' ∋-op op
       -- TODO: Understand
       \∋ {Δ = Δ} {Δ' = Δ'} {op = op} Δ∋op ¬Δ'∋op with Δ∋op
-      ...     | S_ {op' = op'} Δ₁∋op with Δ' ∋-op? op' 
+      ...     | S_ {op′ = op′} Δ₁∋op with Δ' ∋-op? op′
       ...       | yes Δ'∋op' = \∋ Δ₁∋op ¬Δ'∋op
       ...       | no Δ'∌op' = S \∋ Δ₁∋op ¬Δ'∋op
       \∋ {Δ = Δ} {Δ' = Δ'} {op = op} Δ∋op ¬Δ'∋op | Z with Δ' ∋-op? op 
@@ -91,12 +89,11 @@ module effect.Reduction where
       ...       | no _ = Z
 
    ⊆Δ→∋op   : {Δ Δ' Δ'' : OpContext}
-                 {label : String} {A B : ValueType}
-                 {op : Operation label A B}
-               → (Δ \' Δ'' ⊆ Δ')
-               → (Δ ∋-op op)
-               → ¬ (Δ'' ∋-op op)
-               → (Δ' ∋-op op)
+              {op : Operation}
+            → (Δ \' Δ'' ⊆ Δ')
+            → (Δ ∋-op op)
+            → ¬ (Δ'' ∋-op op)
+            → (Δ' ∋-op op)
    ⊆Δ→∋op   {Δ = Δ} {Δ' = Δ'} Δ\⊆Δ' ∋label ¬∋label = 
       -- TODO: `⊆Δ→∋op'` may be redundant
       ⊆Δ→∋op' Δ\⊆Δ' (\∋ ∋label ¬∋label)
@@ -121,12 +118,12 @@ module effect.Reduction where
                   → `do←— `return ⊢v `in ⊢c ↝ ⊢c [ ⊢v ]
 
       β-do-op     :  {Σ : OpContext} {Γ : Context}
-                     {A B C D : ValueType} {Δ : OpContext}
-                     {opLabel : String} {op : Operation opLabel A B}
+                     {C D : ValueType} {Δ : OpContext}
+                     {op : Operation}
                      {Σ∋op : Σ ∋-op op}
                      {Δ∋op : Δ ∋-op op}
-                  →  (⊢perform-arg : Σ ⨟ Γ ⊢v A)
-                  →  (⊢perform-body : Σ ⨟ Γ ▷ B ⊢c C ! Δ)
+                  →  (⊢perform-arg : Σ ⨟ Γ ⊢v (opArg op))
+                  →  (⊢perform-body : Σ ⨟ Γ ▷ (opRet op) ⊢c C ! Δ)
                   →  (⊢do-body : Σ ⨟ Γ ▷ C ⊢c D ! Δ)
                   →  (`do←— (`perform op Σ∋op Δ∋op
                               ⊢perform-arg ⊢perform-body) 
@@ -173,17 +170,16 @@ module effect.Reduction where
                         ((Handler.return handlers) [ ⊢v ] )
 
       β-with-op-handle  :  {Σ : OpContext} {Γ : Context}
-                           {A B Aₒₚ Bₒₚ : ValueType} {Δ Δ' : OpContext}
-                           {label : String}
+                           {A B : ValueType} {Δ Δ' : OpContext}
                         →  {handler : Handler Σ Γ A B Δ'}
                         →  {⊆Δ : (Δ \' (opContext (Handler.ops handler))) ⊆ Δ'}
-                        →  {op : Operation label Aₒₚ Bₒₚ}
+                        →  {op : Operation}
                         -- Is it okay to have separate proofs here?
                         →  {Σ∋op Σ∋op′ : Σ ∋-op op}
                         →  {Δ∋op : Δ ∋-op op}
-                        →  {⊢v : Σ ⨟ Γ ⊢v Aₒₚ}
-                        →  {⊢body : Σ ⨟ Γ ▷ Bₒₚ ⊢c A ! Δ}
-                        →  {⊢opClause : Σ ⨟ Γ ▷ Aₒₚ ▷ (Bₒₚ —→ B ! Δ') ⊢c B ! Δ'}
+                        →  {⊢v : Σ ⨟ Γ ⊢v (opArg op)}
+                        →  {⊢body : Σ ⨟ Γ ▷ (opRet op) ⊢c A ! Δ}
+                        →  {⊢opClause : Σ ⨟ Γ ▷ (opArg op) ▷ ((opRet op) —→ B ! Δ') ⊢c B ! Δ'}
                         →  ((Handler.ops handler) ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause))
                         →  `with (`handler handler ⊆Δ) 
                            handle (`perform op Σ∋op′ Δ∋op ⊢v ⊢body)
@@ -195,15 +191,14 @@ module effect.Reduction where
                            ]
 
       β-with-op-skip :  {Σ : OpContext} {Γ : Context}
-                        {A B Aₒₚ Bₒₚ : ValueType} {Δ Δ' : OpContext}
-                        {label : String}
+                        {A B : ValueType} {Δ Δ' : OpContext}
                      →  {handler : Handler Σ Γ A B Δ'}
                      →  {⊆Δ : (Δ \' (opContext (Handler.ops handler))) ⊆ Δ'}
-                     →  {op : Operation label Aₒₚ Bₒₚ}
+                     →  {op : Operation}
                      →  {Σ∋op : Σ ∋-op op}
                      →  {Δ∋op : Δ ∋-op op}
-                     →  (⊢v : Σ ⨟ Γ ⊢v Aₒₚ)
-                     →  (⊢body : Σ ⨟ Γ ▷ Bₒₚ ⊢c A ! Δ)
+                     →  (⊢v : Σ ⨟ Γ ⊢v (opArg op))
+                     →  (⊢body : Σ ⨟ Γ ▷ (opRet op) ⊢c A ! Δ)
                      →  (¬∋op : ¬ (handlerOps handler ∋-op op))
                      →  `with (`handler handler ⊆Δ) 
                         handle (`perform op Σ∋op Δ∋op ⊢v ⊢body)

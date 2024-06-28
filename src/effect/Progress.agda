@@ -22,13 +22,12 @@ module effect.Progress (Σ : OpContext) where
             → Progress {Δ = Δ} (`return ⊢v)
 
       done-op  : {Δ : OpContext} 
-                 {A Aₒₚ Bₒₚ : ValueType}
-                 {opLabel : String} 
-               → (op : Operation opLabel Aₒₚ Bₒₚ)
+                 {A : ValueType}
+               → (op : Operation)
                → (Σ∋op : Σ ∋-op op)
                → (Δ∋op : Δ ∋-op op)
-               → (⊢arg : Σ ⨟ ∅ ⊢v Aₒₚ)
-               → (⊢cont : Σ ⨟ ∅ ▷ Bₒₚ ⊢c A ! Δ)
+               → (⊢arg : Σ ⨟ ∅ ⊢v (opArg op))
+               → (⊢cont : Σ ⨟ ∅ ▷ (opRet op) ⊢c A ! Δ)
                → Progress (`perform op Σ∋op Δ∋op ⊢arg ⊢cont)
 
       step  : {A : ValueType} {Δ : OpContext}
@@ -38,8 +37,8 @@ module effect.Progress (Σ : OpContext) where
             → Progress (⊢c)
 
    ∋op→∋opClause  : {Σ Δ : OpContext} {Γ : Context}
-                    {Aₒₚ Bₒₚ B : ValueType} {label : String}
-                    {op : Operation label Aₒₚ Bₒₚ}
+                    {B : ValueType}
+                    {op : Operation}
                   → (opClauses : OpClauses Σ Γ B Δ)
                   → (opContext opClauses) ∋-op op
                   → ∃[ ⊢opClause ] ∃[ Σ∋op ] opClauses ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause) 

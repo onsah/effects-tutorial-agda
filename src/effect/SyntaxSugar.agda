@@ -13,13 +13,12 @@ module effect.SyntaxSugar where
     infixl  3 _⨟_
     infix   6 opCall[_]
 
-    opCall[_] : {A B : ValueType}
-                {Σ : OpContext} {Γ : Context} 
-                {Δ : OpContext} {opLabel : String}
-              → (op : Operation opLabel A B)
+    opCall[_] : {Σ : OpContext} {Γ : Context} 
+                {Δ : OpContext}
+              → (op : Operation)
               → {True (Σ ∋-op? op)}
               → {True (Δ ∋-op? op)}
-              → Σ ⨟ Γ ⊢v A —→ B ! Δ
+              → Σ ⨟ Γ ⊢v (opArg op) —→ (opRet op) ! Δ
     opCall[_] op {Σ∋?op} {Δ∋?op} =
       `fun (`perform op (toWitness Σ∋?op) (toWitness Δ∋?op) (` Z) (`return (` Z)))
 
@@ -62,12 +61,11 @@ module effect.SyntaxSugar where
               `in weakenₑ  ⊢B
 
     [_]↦_ : {Σ : OpContext} {Γ : Context}
-            {Aᵢ Bᵢ B : ValueType}
+            {B : ValueType}
             {Δ : OpContext}
-            {label : String}
-            (op : Operation label Aᵢ Bᵢ)
+            (op : Operation)
           → {True (Σ ∋-op? op)}
-          → Σ ⨟ Γ ▷ Aᵢ ▷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
-          → OpClause Σ Γ Aᵢ Bᵢ B Δ label
+          → Σ ⨟ Γ ▷ (opArg op) ▷ ((opRet op) —→ B ! Δ) ⊢c B ! Δ
+          → OpClause Σ Γ B Δ
 
     [_]↦_ op {∋?op} ⊢clause = [ op , toWitness ∋?op ]↦ ⊢clause
