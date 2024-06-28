@@ -19,25 +19,25 @@ module effect.Reduction where
 
    _[_]  :  {Σ : OpContext} {Γ : Context}
             {C V : ValueType} {Δ : OpContext}
-         →  (⊢A : Σ ⨟ Γ ∷ V ⊢c C ! Δ)
+         →  (⊢A : Σ ⨟ Γ ▷ V ⊢c C ! Δ)
          →  (⊢V : Σ ⨟ Γ ⊢v V)
          →  Σ ⨟ Γ ⊢c C ! Δ
    _[_] {Σ = Σ} {Γ = Γ} {V = V} ⊢A ⊢V = subst-c σ ⊢A
       where
-      σ : Substitution Σ (Γ ∷ V) Γ
+      σ : Substitution Σ (Γ ▷ V) Γ
       σ Z = ⊢V
       σ (S ∋A) = ` ∋A
 
    _[_][_]  :  {Σ : OpContext} {Γ : Context}
                {C V1 V2 : ValueType} {Δ : OpContext}
-            →  (⊢C : Σ ⨟ Γ ∷ V1 ∷ V2 ⊢c C ! Δ)
+            →  (⊢C : Σ ⨟ Γ ▷ V1 ▷ V2 ⊢c C ! Δ)
             →  (⊢V1 : Σ ⨟ Γ ⊢v V1)
             →  (⊢V2 : Σ ⨟ Γ ⊢v V2)
             →  Σ ⨟ Γ ⊢c C ! Δ
    _[_][_] {Σ = Σ} {Γ = Γ} {V1 = V1} {V2 = V2} ⊢C ⊢V1 ⊢V2 = 
       subst-c σ ⊢C
       where
-      σ : Substitution Σ (Γ ∷ V1 ∷ V2) Γ
+      σ : Substitution Σ (Γ ▷ V1 ▷ V2) Γ
       σ Z = ⊢V2
       σ (S Z) = ⊢V1
       σ (S (S ∋A)) = ` ∋A
@@ -55,7 +55,7 @@ module effect.Reduction where
            {Δ : OpContext} {label : String}
          → (opClauses : OpClauses Σ Γ B Δ)
          → (opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ label)
-         → (opClauses ∷ opClause) ∋-opClause opClause
+         → (opClauses ▷ opClause) ∋-opClause opClause
 
       S_  : {Σ : OpContext} {Γ : Context}
            {Aᵢ Aᵢ′ Bᵢ Bᵢ′ B : ValueType}
@@ -64,7 +64,7 @@ module effect.Reduction where
          → {opClause : OpClause Σ Γ Aᵢ Bᵢ B Δ label}
          → {opClause′ : OpClause Σ Γ Aᵢ′ Bᵢ′ B Δ label′}
          → opClauses ∋-opClause opClause
-         → (opClauses ∷ opClause′) ∋-opClause opClause
+         → (opClauses ▷ opClause′) ∋-opClause opClause
 
    private
       ⊆Δ→∋op'  : {Δ Δ' : OpContext}
@@ -110,14 +110,14 @@ module effect.Reduction where
       ξ-do        :  {Σ : OpContext} {Γ : Context}
                      {A B : ValueType} {Δ : OpContext}
                      {⊢A ⊢A' : Σ ⨟ Γ ⊢c A ! Δ}
-                     {⊢B : Σ ⨟ Γ ∷ A ⊢c B ! Δ}
+                     {⊢B : Σ ⨟ Γ ▷ A ⊢c B ! Δ}
                   →  ⊢A ↝ ⊢A'
                   →  `do←— ⊢A `in ⊢B ↝ `do←— ⊢A' `in ⊢B
 
       β-do-return :  {Σ : OpContext} {Γ : Context}
                      {C V : ValueType} {Δ : OpContext}
                   →  (⊢v : Σ ⨟ Γ ⊢v V)
-                  →  (⊢c : Σ ⨟ Γ ∷ V ⊢c C ! Δ)
+                  →  (⊢c : Σ ⨟ Γ ▷ V ⊢c C ! Δ)
                   → `do←— `return ⊢v `in ⊢c ↝ ⊢c [ ⊢v ]
 
       β-do-op     :  {Σ : OpContext} {Γ : Context}
@@ -126,8 +126,8 @@ module effect.Reduction where
                      {Σ∋op : Σ ∋-op op}
                      {Δ∋op : Δ ∋-op op}
                   →  (⊢perform-arg : Σ ⨟ Γ ⊢v A)
-                  →  (⊢perform-body : Σ ⨟ Γ ∷ B ⊢c C ! Δ)
-                  →  (⊢do-body : Σ ⨟ Γ ∷ C ⊢c D ! Δ)
+                  →  (⊢perform-body : Σ ⨟ Γ ▷ B ⊢c C ! Δ)
+                  →  (⊢do-body : Σ ⨟ Γ ▷ C ⊢c D ! Δ)
                   →  (`do←— (`perform op Σ∋op Δ∋op
                               ⊢perform-arg ⊢perform-body) 
                      `in
@@ -152,7 +152,7 @@ module effect.Reduction where
 
       β-fun-app   :  {Σ : OpContext} {Γ : Context}
                      {A B : ValueType} {Δ : OpContext}
-                  →  (⊢body : Σ ⨟ Γ ∷ A ⊢c B ! Δ)
+                  →  (⊢body : Σ ⨟ Γ ▷ A ⊢c B ! Δ)
                   →  (⊢arg : Σ ⨟ Γ ⊢v A)
                   →  (`fun ⊢body) `· ⊢arg ↝ ⊢body [ ⊢arg ]
 
@@ -182,8 +182,8 @@ module effect.Reduction where
                         →  {Σ∋op Σ∋op′ : Σ ∋-op op}
                         →  {Δ∋op : Δ ∋-op op}
                         →  {⊢v : Σ ⨟ Γ ⊢v Aₒₚ}
-                        →  {⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ}
-                        →  {⊢opClause : Σ ⨟ Γ ∷ Aₒₚ ∷ (Bₒₚ —→ B ! Δ') ⊢c B ! Δ'}
+                        →  {⊢body : Σ ⨟ Γ ▷ Bₒₚ ⊢c A ! Δ}
+                        →  {⊢opClause : Σ ⨟ Γ ▷ Aₒₚ ▷ (Bₒₚ —→ B ! Δ') ⊢c B ! Δ'}
                         →  ((Handler.ops handler) ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause))
                         →  `with (`handler handler ⊆Δ) 
                            handle (`perform op Σ∋op′ Δ∋op ⊢v ⊢body)
@@ -203,7 +203,7 @@ module effect.Reduction where
                      →  {Σ∋op : Σ ∋-op op}
                      →  {Δ∋op : Δ ∋-op op}
                      →  (⊢v : Σ ⨟ Γ ⊢v Aₒₚ)
-                     →  (⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ)
+                     →  (⊢body : Σ ⨟ Γ ▷ Bₒₚ ⊢c A ! Δ)
                      →  (¬∋op : ¬ (handlerOps handler ∋-op op))
                      →  `with (`handler handler ⊆Δ) 
                         handle (`perform op Σ∋op Δ∋op ⊢v ⊢body)

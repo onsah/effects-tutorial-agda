@@ -29,19 +29,19 @@ module effect.SyntaxSugar where
     private
       length  : Context → ℕ
       length ∅ = zero
-      length (Γ ∷ _) = suc (length Γ)
+      length (Γ ▷ _) = suc (length Γ)
 
       lookup  : {Γ : Context} → {n : ℕ}
               → (p : n < length Γ)
               → ValueType
-      lookup {Γ = _ ∷ A} {n = zero} _ = A
-      lookup {Γ = _ ∷ _} {n = suc _} (s≤s p) = (lookup p)
+      lookup {Γ = _ ▷ A} {n = zero} _ = A
+      lookup {Γ = _ ▷ _} {n = suc _} (s≤s p) = (lookup p)
 
       count   : {Γ : Context} → {n : ℕ}
               → (p : n < length Γ)
               → Γ ∋ lookup p
-      count {Γ = _ ∷ _} {n = zero } _ = Z
-      count {Γ = _ ∷ _} {n = suc _} (s≤s p) = S (count p)
+      count {Γ = _ ▷ _} {n = zero } _ = Z
+      count {Γ = _ ▷ _} {n = suc _} (s≤s p) = S (count p)
 
     
     #_  : {Γ : Context} {Σ : OpContext}
@@ -67,7 +67,7 @@ module effect.SyntaxSugar where
             {label : String}
             (op : Operation label Aᵢ Bᵢ)
           → {True (Σ ∋-op? op)}
-          → Σ ⨟ Γ ∷ Aᵢ ∷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
+          → Σ ⨟ Γ ▷ Aᵢ ▷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
           → OpClause Σ Γ Aᵢ Bᵢ B Δ label
 
     [_]↦_ op {∋?op} ⊢clause = [ op , toWitness ∋?op ]↦ ⊢clause

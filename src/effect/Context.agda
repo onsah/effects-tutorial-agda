@@ -10,19 +10,19 @@ open import effect.Util
 module effect.Context where
 
    infix  4 _∋_
-   infixl 5 _∷_
+   infixl 5 _▷_
 
    data Context : Set where
       ∅ : Context
-      _∷_ : Context → ValueType → Context
+      _▷_ : Context → ValueType → Context
 
    data _∋_ : Context → ValueType → Set where
       Z  : {Γ : Context} {A : ValueType}
-         → Γ ∷ A ∋ A
+         → Γ ▷ A ∋ A
         
       S_ : {Γ : Context} {A B : ValueType}
          → Γ ∋ A
-         → Γ ∷ B ∋ A
+         → Γ ▷ B ∋ A
 
    _∋ₑ?_ : {A B : ValueType} {label : String}
          → (Σ : OpContext)
@@ -30,9 +30,9 @@ module effect.Context where
          → Dec (Σ ∋-op op)
 
    ∅ ∋ₑ? op = no (λ())
-   _∋ₑ?_ (Σ ∷ _) op with Σ ∋ₑ? op
-   _∋ₑ?_ (Σ ∷ _) op | yes ∋ₑop = yes (S ∋ₑop)
-   _∋ₑ?_ {A = A} {B = B} {label = label} (_∷_ {label = label'} {A = A'} {B = B'} Σ op') op | no ∌ₑop 
+   _∋ₑ?_ (Σ ▷ _) op with Σ ∋ₑ? op
+   _∋ₑ?_ (Σ ▷ _) op | yes ∋ₑop = yes (S ∋ₑop)
+   _∋ₑ?_ {A = A} {B = B} {label = label} (_▷_ {label = label'} {A = A'} {B = B'} Σ op') op | no ∌ₑop 
       with label ≟ label' | A ≟-v A'  | B ≟-v B'
    ... | no label≢label'   | _         | _       = 
       no (λ { Z → label≢label' refl

@@ -14,7 +14,7 @@ module effect.Term where
     infix 3 _⨟_⊢c_
     infix 4 `do←—_`in_
     infix 5 _`·_
-    infixl 5 _∷_
+    infixl 5 _▷_
     infix 10 [_,_]↦_
 
     data _⨟_⊢v_ (Σ : OpContext) (Γ : Context) : ValueType → Set
@@ -28,7 +28,7 @@ module effect.Term where
                   : Set where
       [_,_]↦_ : (op : Operation label Aᵢ Bᵢ)
               → (Σ ∋-op op)
-              → Σ ⨟ Γ ∷ Aᵢ ∷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
+              → Σ ⨟ Γ ▷ Aᵢ ▷ (Bᵢ —→ B ! Δ) ⊢c B ! Δ
               → OpClause Σ Γ Aᵢ Bᵢ B Δ label
 
     data OpClauses  (Σ : OpContext) (Γ : Context) 
@@ -36,7 +36,7 @@ module effect.Term where
                     (Δ : OpContext) 
                   : Set where
       ∅       : OpClauses Σ Γ B Δ
-      _∷_     : {Aᵢ Bᵢ : ValueType} {label : String}
+      _▷_     : {Aᵢ Bᵢ : ValueType} {label : String}
               → OpClauses Σ Γ B Δ
               → OpClause Σ Γ Aᵢ Bᵢ B Δ label
               → OpClauses Σ Γ B Δ
@@ -46,7 +46,7 @@ module effect.Term where
               → OpClauses Σ Γ B Δ 
               → OpContext
     opContext  ∅ = ∅
-    opContext (Y ∷ [ op , _ ]↦ _) = (opContext Y) ∷ op
+    opContext (Y ▷ [ op , _ ]↦ _) = (opContext Y) ▷ op
 
     -- A handler block that contains:
     -- `return`: Default clause when the computation returns normally.
@@ -57,7 +57,7 @@ module effect.Term where
       inductive
       constructor handler[_,_]
       field
-        return  : Σ ⨟ Γ ∷ A ⊢c B ! Δ
+        return  : Σ ⨟ Γ ▷ A ⊢c B ! Δ
         ops : OpClauses Σ Γ B Δ
 
     handlerOps  : {Σ : OpContext} {Γ : Context}
@@ -83,7 +83,7 @@ module effect.Term where
             → Σ ⨟ Γ ⊢v str
 
         `fun : {A B : ValueType} {Δ : OpContext}
-             → Σ ⨟ (Γ ∷ A) ⊢c B ! Δ
+             → Σ ⨟ (Γ ▷ A) ⊢c B ! Δ
              → Σ ⨟ Γ ⊢v A —→ B ! Δ
 
         `handler  : {Δ Δ' : OpContext}
@@ -106,13 +106,13 @@ module effect.Term where
                   → (Σ∋op : Σ ∋-op op)
                   → (Δ∋op : Δ ∋-op op)
                   → (⊢arg : Σ ⨟ Γ ⊢v Aₒₚ)
-                  → (⊢body : Σ ⨟ Γ ∷ Bₒₚ ⊢c A ! Δ)
+                  → (⊢body : Σ ⨟ Γ ▷ Bₒₚ ⊢c A ! Δ)
                   → Σ ⨟ Γ ⊢c A ! Δ
 
         `do←—_`in_  : {Δ : OpContext} 
                       {A B : ValueType}
                     → (⊢exp : Σ ⨟ Γ ⊢c A ! Δ)
-                    → (⊢body : Σ ⨟ Γ ∷ A ⊢c B ! Δ)
+                    → (⊢body : Σ ⨟ Γ ▷ A ⊢c B ! Δ)
                     → Σ ⨟ Γ ⊢c B ! Δ
 
         _`·_ : {A : ValueType} {Aₑ : ComputationType}

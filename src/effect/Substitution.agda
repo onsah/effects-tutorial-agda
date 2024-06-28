@@ -15,7 +15,7 @@ module effect.Substitution where
    ext-subst   : {Σ : OpContext}
                  {Γ Γ' : Context} {A : ValueType}
                → Substitution Σ  Γ       Γ'
-               → Substitution Σ (Γ ∷ A) (Γ' ∷ A)
+               → Substitution Σ (Γ ▷ A) (Γ' ▷ A)
    ext-subst σ Z = ` Z
    ext-subst σ (S x) = renameᵥ S_ (σ x)
 
@@ -37,8 +37,8 @@ module effect.Substitution where
                → OpClauses Σ Γ B Δ
                → OpClauses Σ Γ' B Δ
    subst-ops   σ ∅ = ∅
-   subst-ops   σ (handlers ∷ [ op , ∋op ]↦ ⊢handler) = 
-      (subst-ops σ handlers) ∷ [ op , ∋op ]↦ (subst-c (ext-subst (ext-subst σ)) ⊢handler)
+   subst-ops   σ (handlers ▷ [ op , ∋op ]↦ ⊢handler) = 
+      (subst-ops σ handlers) ▷ [ op , ∋op ]↦ (subst-c (ext-subst (ext-subst σ)) ⊢handler)
 
    subst-c σ (`return ⊢A) = `return (subst-v σ ⊢A)
    subst-c σ (`perform op Σ∋op Δ∋op ⊢arg ⊢body) = 
@@ -59,8 +59,8 @@ module effect.Substitution where
                   → (handler  : OpClauses Σ Γ B Δ)
                   → (opContext handler) ≡ (opContext (subst-ops σ handler))
       ops-≡-subst σ ∅ = refl
-      ops-≡-subst σ (handlers ∷ [ op , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
-      ... | handlers-≡ = cong (_∷ op) handlers-≡
+      ops-≡-subst σ (handlers ▷ [ op , _ ]↦ ⊢handler) with (ops-≡-subst σ handlers) 
+      ... | handlers-≡ = cong (_▷ op) handlers-≡
 
    subst-v σ (` x) = σ x
    subst-v _ `true = `true

@@ -7,7 +7,7 @@ open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩; _,′_ to ⟨_
 module effect.Type where
     
    infix  4 _∋-op_
-   infixl 5 _∷_
+   infixl 5 _▷_
    infix 6 _!_
    infixr 5 _—→_
    infix 5 _⟹_
@@ -39,7 +39,8 @@ module effect.Type where
     
    data OpContext where
       ∅     : OpContext
-      _∷_   : {label : String} {A B : ValueType}
+      
+      _▷_   : {label : String} {A B : ValueType}
             → OpContext → Operation label A B → OpContext
 
    _≟-v_ : (A : ValueType)
@@ -114,15 +115,15 @@ module effect.Type where
    ... | yes refl  | yes refl  = yes refl
 
    ∅ ≟-Δ ∅ = yes refl
-   ∅ ≟-Δ (Δ₂ ∷ x) = no (λ())
-   (_ ∷ _) ≟-Δ ∅ = no (λ())
-   (Δ ∷ (label ⦂ A —→ B)) ≟-Δ (Δ' ∷ (label' ⦂ A' —→ B')) with Δ ≟-Δ Δ'
+   ∅ ≟-Δ (Δ₂ ▷ x) = no (λ())
+   (_ ▷ _) ≟-Δ ∅ = no (λ())
+   (Δ ▷ (label ⦂ A —→ B)) ≟-Δ (Δ' ▷ (label' ⦂ A' —→ B')) with Δ ≟-Δ Δ'
    ... | no ¬Δ≡Δ = no (λ{ refl → ¬Δ≡Δ refl})
    ... | yes Δ≡Δ' with label ≟ label' | A ≟-v A' | B ≟-v B'
    ...   | no label≢label    | _         | _         = no (λ{ refl → label≢label refl})
    ...   | _                 | no A≢A    | _         = no (λ{ refl → A≢A refl})
    ...   | _                 | _         | no B≢B    = no (λ{ refl → B≢B refl})
-   ...   | yes refl          | yes refl  | yes refl = yes (cong (_∷ (label ⦂ A —→ B)) Δ≡Δ')
+   ...   | yes refl          | yes refl  | yes refl = yes (cong (_▷ (label ⦂ A —→ B)) Δ≡Δ')
 
    data _∋-op_   : {label : String} {A B : ValueType}
                → OpContext → Operation label A B → Set 
@@ -130,14 +131,14 @@ module effect.Type where
       Z  : {Δ : OpContext}
             {label : String} {A B : ValueType}
             {op : Operation label A B}
-         → Δ ∷ op ∋-op op
+         → Δ ▷ op ∋-op op
       
       S_ : {Δ : OpContext}
             {label label' : String} {A A' B B' : ValueType}
             {op : Operation label A B} {op' : Operation label' A' B'}
-         -- → ¬ (op ≡ op')
          → Δ ∋-op op
-         → Δ ∷ op' ∋-op op
+         -- → ¬ (op ≡ op')
+         → Δ ▷ op' ∋-op op
 
    _∋-op?_  : {label : String} {A B : ValueType}
               (Δ : OpContext) 
@@ -145,7 +146,7 @@ module effect.Type where
             → Dec (Δ ∋-op op)
 
    ∅ ∋-op? _ = no (λ())
-   (Δ ∷ (label ⦂ A —→ B)) ∋-op? op@(label' ⦂ A' —→ B') with label ≟ label' | A ≟-v A' | B ≟-v B' | Δ ∋-op? op
+   (Δ ▷ (label ⦂ A —→ B)) ∋-op? op@(label' ⦂ A' —→ B') with label ≟ label' | A ≟-v A' | B ≟-v B' | Δ ∋-op? op
    ...   | yes refl          | yes refl  | yes refl | _       = yes Z
    ...   | no label≢label    | _         | _        | yes ∋op = yes (S ∋op)
    ...   | no label≢label    | _         | _        | no ∌op  = no (λ{ Z → label≢label refl
@@ -164,9 +165,9 @@ module effect.Type where
 
    _\'_ : OpContext → OpContext → OpContext
    ∅ \' Δ' = ∅
-   (Δ ∷ op) \' Δ' with Δ' ∋-op? op
+   (Δ ▷ op) \' Δ' with Δ' ∋-op? op
    ... | yes _ = Δ \' Δ'
-   ... | no  _ = (Δ \' Δ') ∷ op
+   ... | no  _ = (Δ \' Δ') ▷ op
 
    _≟-op′_  : ∀ {label label′ A A′ B B′}
             → (op : Operation label A B)

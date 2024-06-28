@@ -28,7 +28,7 @@ module effect.Progress (Σ : OpContext) where
                → (Σ∋op : Σ ∋-op op)
                → (Δ∋op : Δ ∋-op op)
                → (⊢arg : Σ ⨟ ∅ ⊢v Aₒₚ)
-               → (⊢cont : Σ ⨟ ∅ ∷ Bₒₚ ⊢c A ! Δ)
+               → (⊢cont : Σ ⨟ ∅ ▷ Bₒₚ ⊢c A ! Δ)
                → Progress (`perform op Σ∋op Δ∋op ⊢arg ⊢cont)
 
       step  : {A : ValueType} {Δ : OpContext}
@@ -43,9 +43,9 @@ module effect.Progress (Σ : OpContext) where
                   → (opClauses : OpClauses Σ Γ B Δ)
                   → (opContext opClauses) ∋-op op
                   → ∃[ ⊢opClause ] ∃[ Σ∋op ] opClauses ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause) 
-   ∋op→∋opClause {op = op} (opClauses ∷ opClause@([ .op , Σ∋op ]↦ ⊢clause)) Z = 
+   ∋op→∋opClause {op = op} (opClauses ▷ opClause@([ .op , Σ∋op ]↦ ⊢clause)) Z = 
       ⟨ ⊢clause , ⟨ Σ∋op , Z opClauses opClause ⟩ ⟩
-   ∋op→∋opClause {op = op} (opClauses ∷ ([ _ , _ ]↦ _)) (S ∋op) 
+   ∋op→∋opClause {op = op} (opClauses ▷ ([ _ , _ ]↦ _)) (S ∋op) 
       with ∋op→∋opClause opClauses ∋op
    ... | ⟨ ⊢opClause , ⟨ Σ∋op , ∋opClause ⟩ ⟩ = 
       ⟨ ⊢opClause , ⟨ Σ∋op , S ∋opClause ⟩ ⟩

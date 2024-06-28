@@ -12,7 +12,7 @@ module effect.Renaming where
    private
       ext : {Γ Δ : Context}
           → Renaming Γ Δ
-          → ∀ {B} → Renaming (Γ ∷ B) (Δ ∷ B)
+          → ∀ {B} → Renaming (Γ ▷ B) (Δ ▷ B)
       ext ρ Z = Z
       ext ρ (S x) = S (ρ x)
 
@@ -30,8 +30,8 @@ module effect.Renaming where
                → OpClauses Σ Γ B Δ
                → OpClauses Σ Γ' B Δ
    rename-ops ρ ∅ = ∅
-   rename-ops ρ (opClauses ∷ ([ op , ∋op ]↦ handler)) = 
-      (rename-ops ρ opClauses) ∷ [ op , ∋op ]↦ (renameₑ (ext (ext ρ)) handler)
+   rename-ops ρ (opClauses ▷ ([ op , ∋op ]↦ handler)) = 
+      (rename-ops ρ opClauses) ▷ [ op , ∋op ]↦ (renameₑ (ext (ext ρ)) handler)
 
    private
 
@@ -42,9 +42,9 @@ module effect.Renaming where
                     → (handler  : OpClauses Σ Γ B Δ)
                     → (opContext handler) ≡ (opContext (rename-ops ρ handler))
       ops-≡-rename ρ ∅ = refl
-      ops-≡-rename ρ (handler ∷ [ op , _ ]↦ _) with (ops-≡-rename ρ handler) 
+      ops-≡-rename ρ (handler ▷ [ op , _ ]↦ _) with (ops-≡-rename ρ handler) 
       ... | handler-≡ =
-         cong (_∷ op) handler-≡
+         cong (_▷ op) handler-≡
 
    renameᵥ ρ (` ∋x) = ` (ρ ∋x)
    renameᵥ ρ `true = `true
@@ -73,11 +73,11 @@ module effect.Renaming where
    weakenᵥ  :  {Σ : OpContext}
                {Γ : Context} {A B : ValueType}
             →  Σ ⨟ Γ ⊢v A
-            →  Σ ⨟ Γ ∷ B ⊢v A
+            →  Σ ⨟ Γ ▷ B ⊢v A
    weakenₑ  :  {Σ : OpContext} {Δ : OpContext}
                {Γ : Context} {A B : ValueType}
             →  Σ ⨟ Γ ⊢c A ! Δ
-            →  Σ ⨟ Γ ∷ B ⊢c A ! Δ
+            →  Σ ⨟ Γ ▷ B ⊢c A ! Δ
 
    weakenᵥ ⊢v = renameᵥ (S_) ⊢v
 
