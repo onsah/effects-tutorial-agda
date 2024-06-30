@@ -14,6 +14,7 @@ module effect.Type where
    infix 5 _⦂_—→_
    infix 10 _\'_
    infix 9 _⊆_
+   infix 6 S_⨾_
 
    data ValueType : Set
    data ComputationType : Set
@@ -139,28 +140,31 @@ module effect.Type where
            {op : Operation}
          → Δ ▷ op ∋-op op
       
-      S_ : {Δ : OpContext}
+      S_⨾_  : {Δ : OpContext}
            {op op′ : Operation}
          → Δ ∋-op op
-         -- → ¬ (op ≡ op′)
+         → ¬ (op ≡ op′)
          → Δ ▷ op′ ∋-op op
+
+   _≟-op_   : (op op′ : Operation)
+            → Dec (op ≡ op′)
+   (label ⦂ A —→ B) ≟-op (label' ⦂ A' —→ B') with label ≟ label' | A ≟-v A' | B ≟-v B' 
+   ... | yes refl        | yes refl  | yes refl  = yes refl
+   ... | no label≢label' | _         | _         = no λ  {refl → label≢label' refl}
+   ... | _               | no A≢A'   | _         = no λ  {refl → A≢A' refl}
+   ... | _               | _         | no B≢B'   = no λ  {refl → B≢B' refl}
 
    _∋-op?_  : (Δ : OpContext) 
             → (op : Operation)
             → Dec (Δ ∋-op op)
 
    ∅ ∋-op? _ = no (λ())
-   (Δ ▷ (label ⦂ A —→ B)) ∋-op? op@(label' ⦂ A' —→ B') with label ≟ label' | A ≟-v A' | B ≟-v B' | Δ ∋-op? op
-   ...   | yes refl          | yes refl  | yes refl | _       = yes Z
-   ...   | no label≢label    | _         | _        | yes ∋op = yes (S ∋op)
-   ...   | no label≢label    | _         | _        | no ∌op  = no (λ{ Z → label≢label refl
-                                                                     ; (S ∋op) → ∌op ∋op})
-   ...   | _                 | no A≢A    | _        | yes ∋op = yes (S ∋op)
-   ...   | _                 | no A≢A    | _        | no ∌op  = no (λ{ Z → A≢A refl
-                                                                     ; (S ∋op) → ∌op ∋op})
-   ...   | _                 | _         | no B≢B   | yes ∋op = yes (S ∋op)
-   ...   | _                 | _         | no B≢B   | no ∌op  = no (λ{ Z → B≢B refl
-                                                                     ; (S ∋op) → ∌op ∋op})
+   (Δ ▷ op′) ∋-op? op with op ≟-op op′
+   ... | yes refl = yes Z
+   ... | no op≢op′ with Δ ∋-op? op
+   ...   | yes Δ∋op = yes (S Δ∋op ⨾ op≢op′)
+   ...   | no Δ∌op = no (λ{ Z → op≢op′ refl
+                          ; (S Δ∋op ⨾ _) → Δ∌op Δ∋op})
 
    _⊆_ : OpContext → OpContext → Set
    Δ ⊆ Δ' =   (op : Operation) 
@@ -171,12 +175,4 @@ module effect.Type where
    (Δ ▷ op) \' Δ' with Δ' ∋-op? op
    ... | yes _ = Δ \' Δ'
    ... | no  _ = (Δ \' Δ') ▷ op
-
-   _≟-op_   : (op op′ : Operation)
-            → Dec (op ≡ op′)
-   (label ⦂ A —→ B) ≟-op (label' ⦂ A' —→ B') with label ≟ label' | A ≟-v A' | B ≟-v B' 
-   ... | yes refl        | yes refl  | yes refl  = yes refl
-   ... | no label≢label' | _         | _         = no λ  {refl → label≢label' refl}
-   ... | _               | no A≢A'   | _         = no λ  {refl → A≢A' refl}
-   ... | _               | _         | no B≢B'   = no λ  {refl → B≢B' refl}
   

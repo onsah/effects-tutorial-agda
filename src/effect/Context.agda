@@ -11,6 +11,7 @@ module effect.Context where
 
    infix  4 _∋_
    infixl 5 _▷_
+   infix  7 S_
 
    data Context : Set where
       ∅ : Context

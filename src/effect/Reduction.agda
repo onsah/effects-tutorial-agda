@@ -81,9 +81,9 @@ module effect.Reduction where
          → Δ \' Δ' ∋-op op
       -- TODO: Understand
       \∋ {Δ = Δ} {Δ' = Δ'} {op = op} Δ∋op ¬Δ'∋op with Δ∋op
-      ...     | S_ {op′ = op′} Δ₁∋op with Δ' ∋-op? op′
+      ...     | S_⨾_ {op′ = op′} Δ₁∋op op≢op′ with Δ' ∋-op? op′
       ...       | yes Δ'∋op' = \∋ Δ₁∋op ¬Δ'∋op
-      ...       | no Δ'∌op' = S \∋ Δ₁∋op ¬Δ'∋op
+      ...       | no Δ'∌op' = S \∋ Δ₁∋op ¬Δ'∋op ⨾ op≢op′
       \∋ {Δ = Δ} {Δ' = Δ'} {op = op} Δ∋op ¬Δ'∋op | Z with Δ' ∋-op? op 
       ...       | yes Δ'∋op = ⊥-elim (¬Δ'∋op Δ'∋op)
       ...       | no _ = Z
@@ -174,15 +174,14 @@ module effect.Reduction where
                         →  {handler : Handler Σ Γ A B Δ'}
                         →  {⊆Δ : (Δ \' (opContext (Handler.ops handler))) ⊆ Δ'}
                         →  {op : Operation}
-                        -- Is it okay to have separate proofs here?
-                        →  {Σ∋op Σ∋op′ : Σ ∋-op op}
+                        →  {Σ∋op : Σ ∋-op op}
                         →  {Δ∋op : Δ ∋-op op}
                         →  {⊢v : Σ ⨟ Γ ⊢v (opArg op)}
                         →  {⊢body : Σ ⨟ Γ ▷ (opRet op) ⊢c A ! Δ}
                         →  {⊢opClause : Σ ⨟ Γ ▷ (opArg op) ▷ ((opRet op) —→ B ! Δ') ⊢c B ! Δ'}
                         →  ((Handler.ops handler) ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause))
                         →  `with (`handler handler ⊆Δ) 
-                           handle (`perform op Σ∋op′ Δ∋op ⊢v ⊢body)
+                           handle (`perform op Σ∋op Δ∋op ⊢v ⊢body)
                            ↝
                            ⊢opClause [ ⊢v ][ 
                               `fun (

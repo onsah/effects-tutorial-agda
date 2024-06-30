@@ -4,6 +4,7 @@ open import Data.Product using (∃-syntax)
 open import Relation.Nullary using (Dec; yes; no; ¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; cong)
 open import Data.Product using (_×_) renaming (_,_ to ⟨_,_⟩; _,′_ to ⟨_,′_⟩)
+open import Data.Empty using (⊥-elim)
 
 open import effect.Type
 open import effect.Context
@@ -44,10 +45,19 @@ module effect.Progress (Σ : OpContext) where
                   → ∃[ ⊢opClause ] ∃[ Σ∋op ] opClauses ∋-opClause ([ op , Σ∋op ]↦ ⊢opClause) 
    ∋op→∋opClause {op = op} (opClauses ▷ opClause@([ .op , Σ∋op ]↦ ⊢clause)) Z = 
       ⟨ ⊢clause , ⟨ Σ∋op , Z opClauses opClause ⟩ ⟩
-   ∋op→∋opClause {op = op} (opClauses ▷ ([ _ , _ ]↦ _)) (S ∋op) 
+   ∋op→∋opClause {op = op} (opClauses ▷ ([ _ , _ ]↦ _)) (S ∋op ⨾ op≢op′) 
       with ∋op→∋opClause opClauses ∋op
    ... | ⟨ ⊢opClause , ⟨ Σ∋op , ∋opClause ⟩ ⟩ = 
       ⟨ ⊢opClause , ⟨ Σ∋op , S ∋opClause ⟩ ⟩
+
+   Σ∋op≡Σ∋′op  : {Σ : OpContext} {op : Operation}
+               → (Σ∋op : Σ ∋-op op)
+               → (Σ∋′op : Σ ∋-op op)
+               → Σ∋op ≡ Σ∋′op
+   Σ∋op≡Σ∋′op Z Z = refl
+   Σ∋op≡Σ∋′op Z (S _ ⨾ op≢op) = ⊥-elim (op≢op refl)
+   Σ∋op≡Σ∋′op (S _ ⨾ op≢op) Z = ⊥-elim (op≢op refl)
+   Σ∋op≡Σ∋′op (S Σ∋op ⨾ op≢op′) (S Σ∋′op ⨾ .op≢op′) = cong (S_⨾ op≢op′) (Σ∋op≡Σ∋′op Σ∋op Σ∋′op)
 
    progress : {A : ValueType} {Δ : OpContext}
             → (⊢c : Σ ⨟ ∅ ⊢c A ! Δ)
@@ -93,6 +103,6 @@ module effect.Progress (Σ : OpContext) where
                `perform op Σ∋op Δ∋op ⊢arg ⊢exp) with handlerOps handler ∋-op? op
    ... | no ∌op = step (β-with-op-skip ⊢arg ⊢exp  ∌op)
    ... | yes ∋op with ∋op→∋opClause (Handler.ops handler) ∋op
-   ... | ⟨ ⊢opClause , ⟨ Σ∋op′ , ∋opClause ⟩ ⟩ 
+   ... | ⟨ ⊢opClause , ⟨ Σ∋′op , ∋opClause ⟩ ⟩ rewrite Σ∋op≡Σ∋′op Σ∋op Σ∋′op
       = step (β-with-op-handle ∋opClause)
           
