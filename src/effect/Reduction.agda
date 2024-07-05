@@ -99,9 +99,9 @@ module effect.Reduction where
       ⊆Δ→∋op' Δ\⊆Δ' (\∋ ∋label ¬∋label)
 
    data _↝_ :  {Σ : OpContext} {Γ : Context}
-               {A B : ValueType} {Δ Δ' : OpContext}
+               {A : ValueType} {Δ Δ' : OpContext}
             →  (⊢A : Σ ⨟ Γ ⊢c A ! Δ)
-            →  (⊢B : Σ ⨟ Γ ⊢c B ! Δ')
+            →  (⊢B : Σ ⨟ Γ ⊢c A ! Δ')
             →  Set where
 
       ξ-do        :  {Σ : OpContext} {Γ : Context}
