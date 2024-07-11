@@ -8,3 +8,4 @@ module effect.Lang where
     open import effect.SyntaxSugar public
     open import effect.Reduction public
     open import effect.Progress public
+    open import effect.Evaluation public
