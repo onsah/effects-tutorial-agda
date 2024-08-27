@@ -22,7 +22,7 @@ Source code is inside `src/effect` directory:
 - `Substitution` : Substitution lemma for terms of both value and computation types.
 - `Reduction` : Reduction rules as defined in the paper. Adapted to intrinsic typing.
 - `Progress` : Progress lemma for the `Reduction`.
-- `Evaluation` : `eval` function to automatically reduce the term according to `Reduction` rules.ahin
+- `Evaluation` : `eval` function to automatically reduce the term according to `Reduction` rules.
 
 ## Author(s)
 Onur Sahin <sahinonur2000@hotmail.com>
